@@ -1,0 +1,20 @@
+{
+  "ezrtp.config.general": "EzRTP Client Settings",
+
+  "ezrtp.config.general.enableTeleportAnimation": "Enable teleport animation",
+  "ezrtp.config.general.enableTeleportAnimation.comment": "Play a brief animation when teleporting.",
+
+  "ezrtp.config.general.rtpRadius": "Random teleport radius",
+  "ezrtp.config.general.rtpRadius.comment": "Maximum radius (blocks) used when searching for a random teleport destination.",
+
+  "ezrtp.config.general.showConfirmation": "Show confirmation dialog",
+  "ezrtp.config.general.showConfirmation.comment": "Show a small confirmation dialog before teleporting.",
+
+  "ezrtp.config.general.teleportAnimationType": "Teleport animation type",
+  "ezrtp.config.general.teleportAnimationType.comment": "Choose the animation to play (FADE, SPARKLE, NONE).",
+
+  "ezrtp.config.general.confirmationTimeout": "Confirmation timeout (seconds)",
+  "ezrtp.config.general.confirmationTimeout.comment": "Seconds to wait for confirmation before cancelling the teleport.",
+
+  "ezrtp.config.general.translation_info": "These settings are saved per-player in the client config when running with Forge."
+}

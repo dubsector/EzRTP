@@ -4,6 +4,8 @@
 ![Downloads](https://ezbanners.org/shields/plugins/e5661a39-5da1-4f4e-aabb-8d93e769b646/downloads.png)
 ![Server Software](https://ezbanners.org/shields/plugins/e5661a39-5da1-4f4e-aabb-8d93e769b646/server-software.png)
 
+> **Work In Progress — Forge module:** The `ezrtp-forge` module is under active development and is not yet production-ready. See [ezrtp-forge/README.md](ezrtp-forge/README.md) for current status, build instructions, and caveats.
+
 EzRTP is a production-focused random teleport plugin for Minecraft networks.
 It is designed for **safety-first teleportation**, **cross-platform compatibility**, and **configuration-driven control** for server owners.
 
@@ -182,6 +184,8 @@ EzRTP uses a multi-module Maven layout:
 - `ezrtp-paper/` - Paper-specific adapters/services.
 - `ezrtp-spigot/` - Spigot-specific module.
 - `ezrtp-purpur/` - Purpur module built with Paper compatibility behavior.
+
+> Note: The `ezrtp-forge` module is currently in development (work-in-progress). It contains a scaffold implementation and experimental build support; runtime validation and a packaged Forge mod JAR are pending. Contributions and testing in a Forge dev environment are welcome.
 
 ---
 

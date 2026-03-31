@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="${forge.loader.version}" # set appropriate Forge loader version for your target MC/Forge (replace property or set via -Dforge.loader.version=...)
+
+[[mods]]
+modId="ezrtp"
+version="2.0.0"
+displayName="EzRTP"
+credits="EzPlugins"
+authors=["EzRTP Team"]
+description='''
+EzRTP Forge integration module. Configure client-facing settings in the Mod Options -> EzRTP -> Config screen.
+'''
+
+[dependencies.ezrtp]
+modId="ezrtp-common"
+mandatory=false

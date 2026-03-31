@@ -14,7 +14,8 @@
     <module>ezrtp-bukkit</module>
     <module>ezrtp-paper</module>
     <module>ezrtp-spigot</module>
-    <module>ezrtp-purpur</module>
+      <module>ezrtp-purpur</module>
+      <module>ezrtp-forge</module>
   </modules>
 
   <properties>

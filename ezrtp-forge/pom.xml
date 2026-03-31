@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.skyblockexp</groupId>
+    <artifactId>ezrtp-parent</artifactId>
+    <version>2.0.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <groupId>com.skyblockexp</groupId>
+  <artifactId>ezrtp-forge</artifactId>
+  <version>2.0.0</version>
+  <packaging>jar</packaging>
+  <name>EzRTP (Forge)</name>
+  <description>EzRTP Forge-compatible module (singleplayer scaffold).</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.skyblockexp</groupId>
+      <artifactId>ezrtp-common</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.papermc.paper</groupId>
+      <artifactId>paper-api</artifactId>
+      <version>${paper.api.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>EzRTP-forge-${project.version}</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>META-INF/mods.toml</include>
+          <include>**/*.yml</include>
+          <include>messages/*.yml</include>
+        </includes>
+        <filtering>true</filtering>
+      </resource>
+      <resource>
+        <directory>../src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>config.yml</include>
+          <include>rtp.yml</include>
+          <include>limits.yml</include>
+          <include>queue.yml</include>
+          <include>gui.yml</include>
+          <include>network.yml</include>
+          <include>force-rtp.yml</include>
+          <include>messages/*.yml</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>shade-forge-mod</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <finalName>EzRTP-forge-${project.version}</finalName>
+              <artifactSet>
+                <includes>
+                  <include>com.skyblockexp:ezrtp-common</include>
+                  <include>net.kyori:adventure-api</include>
+                  <include>net.kyori:adventure-key</include>
+                  <include>net.kyori:adventure-text-minimessage</include>
+                </includes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <properties>
+    <!-- Replace this with the Forge loader version appropriate for your target MC/Forge (or pass -Dforge.loader.version=...) -->
+    <forge.loader.version>REPLACE_WITH_FORGE_LOADER_VERSION</forge.loader.version>
+  </properties>
+
+  <profiles>
+    <profile>
+      <id>package-forge</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <finalName>EzRTP-forge-${project.version}</finalName>
+      </build>
+    </profile>
+  </profiles>
+
+ 
+
+</project>

@@ -55,6 +55,7 @@
     <modules>
         <module>ezrtp-common</module>
         <module>.</module>
+        <module>ezrtp-forge</module>
         <module>ezrtp-purpur</module>
     </modules>
 
