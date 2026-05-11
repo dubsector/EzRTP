@@ -1,5 +1,7 @@
 package com.skyblockexp.ezrtp.performance;
 
+import java.util.Locale;
+
 /** Immutable point-in-time snapshot of EzRTP performance metrics. */
 public final class PerformanceSnapshot {
 
@@ -210,6 +212,6 @@ public final class PerformanceSnapshot {
     }
 
     private static String fmt(double value) {
-        return String.format("%.2f", value);
+        return String.format(Locale.US, "%.2f", value);
     }
 }

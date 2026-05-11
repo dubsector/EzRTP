@@ -24,6 +24,7 @@
       <groupId>com.skyblockexp</groupId>
       <artifactId>ezrtp-common</artifactId>
       <version>3.2.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>io.papermc.paper</groupId>
@@ -77,7 +78,6 @@
               <artifactSet>
                 <includes>
                   <include>com.skyblockexp:ezrtp-paper</include>
-                  <include>com.skyblockexp:ezrtp-common</include>
                 </includes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
