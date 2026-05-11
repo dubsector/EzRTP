@@ -152,12 +152,12 @@ jobs:
             folia
           changelog-file: release-notes.md
           dependencies: |
-            placeholderapi | optional
-            chunky | optional
-            worldguard | optional
-            teams-api | optional
-            ezcountdown | optional
-            ezeconomy | optional
+            placeholderapi(optional)
+            chunky(optional)
+            worldguard(optional)
+            teams-api(optional)
+            ezcountdown(optional)
+            ezeconomy(optional)
 
       # ──────────────────────────────────────────────────────────────────────
       #  8. DISCORD NOTIFICATION
