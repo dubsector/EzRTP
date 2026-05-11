@@ -135,12 +135,12 @@ jobs:
             folia
           changelog-file: changelog.md
           dependencies: |
-            placeholderapi | optional
-            chunky | optional
-            worldguard | optional
-            teams-api | optional
-            ezcountdown | optional
-            ezeconomy | optional
+            placeholderapi(optional)
+            chunky(optional)
+            worldguard(optional)
+            teams-api(optional)
+            ezcountdown(optional)
+            ezeconomy(optional)
 
       - name: Create and push nightly tag
         if: steps.changes.outputs.has_changes == 'true'
