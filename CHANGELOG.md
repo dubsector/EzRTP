@@ -20,6 +20,18 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.2.1] - 2026-05-11
+
+### Fixed
+
+- `PerformanceSnapshot#fmt` now passes `Locale.US` to `String#format`, ensuring decimal separators are always locale-independent (dots, not commas).
+
+### Changed
+
+- Dependency scope for `ezrtp-common` in the `ezrtp-paper` and `ezrtp-purpur` modules changed to `provided`; the common module is bundled by the main plugin JAR and must not be re-included by platform modules.
+
+---
+
 ## [3.2.0] - 2026-05-11
 
 ### Added
