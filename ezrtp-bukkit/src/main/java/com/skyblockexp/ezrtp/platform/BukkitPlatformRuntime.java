@@ -10,7 +10,7 @@ public final class BukkitPlatformRuntime implements PlatformRuntime {
 
     public BukkitPlatformRuntime(PlatformRuntimeCapabilities capabilities, Plugin plugin) {
         this.capabilities = capabilities;
-        this.scheduler = new BukkitPlatformScheduler(plugin);
+        this.scheduler = new BukkitPlatformScheduler(plugin, capabilities);
     }
 
     @Override

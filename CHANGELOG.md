@@ -20,6 +20,19 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.2.2] - 2026-05-12
+
+### Fixed
+
+- `BukkitPlatformScheduler` now handles Folia servers correctly. Previously, running EzRTP on
+  Folia without the Paper runtime module caused an `UnsupportedOperationException` during plugin
+  enable because the Bukkit `CraftScheduler` rejects all synchronous task scheduling on Folia.
+  The scheduler now detects `regionizedRuntime` capabilities and routes all scheduling calls
+  through Folia's `GlobalRegionScheduler` / `RegionScheduler` via reflection, matching the
+  behaviour already present in `PaperPlatformScheduler`.
+
+---
+
 ## [3.2.1] - 2026-05-11
 
 ### Fixed
