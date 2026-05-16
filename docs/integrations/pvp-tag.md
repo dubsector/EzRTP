@@ -62,7 +62,7 @@ Add or override these keys in `plugins/EzRTP/messages/en.yml`:
 
 When a supported plugin is detected, EzRTP logs a confirmation on enable:
 
-```
+```text
 [EzRTP] PvP tag integration: CombatLogX detected.
 [EzRTP] PvP tag integration: PvPManager detected.
 [EzRTP] PvP tag integration: Simple Combat Log detected.
