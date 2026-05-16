@@ -1,6 +1,8 @@
 package com.skyblockexp.ezrtp.platform;
 
+import org.bukkit.Location;
 import org.bukkit.Server;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
@@ -14,6 +16,7 @@ import org.mockito.quality.Strictness;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -174,5 +177,43 @@ class BukkitPlatformSchedulerFoliaTest {
                 new BukkitPlatformScheduler(plugin, PlatformRuntimeCapabilities.PAPER_FOLIA);
 
         assertDoesNotThrow(() -> scheduler.executeRegionDelayed(null, 0, 0, () -> {}, 20L));
+    }
+
+    // --- teleportAsync ---
+
+    /**
+     * On Folia (regionized), teleportAsync must not call the synchronous Player.teleport().
+     * Since Player.teleportAsync() is not available in the test JVM, the reflection path
+     * falls through to the sync fallback. This test verifies the method does not throw and
+     * returns a completed future.
+     */
+    @Test
+    void teleportAsync_withFoliaCapabilities_doesNotThrow() {
+        Player player = mock(Player.class);
+        Location destination = mock(Location.class);
+        when(player.teleport(destination)).thenReturn(true);
+
+        BukkitPlatformScheduler scheduler =
+                new BukkitPlatformScheduler(plugin, PlatformRuntimeCapabilities.PAPER_FOLIA);
+
+        assertDoesNotThrow(() -> scheduler.teleportAsync(player, destination));
+    }
+
+    /**
+     * On standard Bukkit, teleportAsync delegates to the synchronous Player.teleport().
+     */
+    @Test
+    void teleportAsync_withBukkitCapabilities_callsSyncTeleport() throws Exception {
+        Player player = mock(Player.class);
+        Location destination = mock(Location.class);
+        when(player.teleport(destination)).thenReturn(true);
+
+        BukkitPlatformScheduler scheduler =
+                new BukkitPlatformScheduler(plugin, PlatformRuntimeCapabilities.BUKKIT);
+
+        Boolean result = scheduler.teleportAsync(player, destination).get();
+
+        assertTrue(result);
+        verify(player).teleport(destination);
     }
 }

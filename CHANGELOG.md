@@ -20,6 +20,19 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.2.3] - 2026-05-16
+
+### Fixed
+
+- **Folia teleport crash** (`UnsupportedOperationException: Must use teleportAsync while in
+  region threading`): `BukkitPlatformScheduler` now overrides `teleportAsync` and, when running
+  on Folia (`regionizedRuntime` capability), calls `player.teleportAsync(Location)` via
+  reflection instead of the forbidden synchronous `player.teleport()`. The Bukkit module was
+  the only scheduler that still used the synchronous fallback from the interface default;
+  `PaperPlatformScheduler` already called `teleportAsync` directly.
+
+---
+
 ## [3.2.2] - 2026-05-12
 
 ### Fixed
