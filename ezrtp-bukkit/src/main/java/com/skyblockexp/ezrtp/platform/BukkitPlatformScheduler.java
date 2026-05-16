@@ -1,10 +1,13 @@
 package com.skyblockexp.ezrtp.platform;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
 
 public final class BukkitPlatformScheduler implements PlatformScheduler {
 
@@ -93,6 +96,28 @@ public final class BukkitPlatformScheduler implements PlatformScheduler {
             return;
         }
         plugin.getServer().getScheduler().runTaskLater(plugin, task, delayTicks);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> teleportAsync(Player player, Location destination) {
+        if (capabilities.regionizedRuntime()) {
+            // Folia forbids synchronous teleport from a region thread. Use teleportAsync
+            // via reflection so that the bukkit module works on Folia without a hard
+            // Paper/Folia compile-time dependency.
+            return invokeTeleportAsync(player, destination);
+        }
+        return CompletableFuture.completedFuture(player.teleport(destination));
+    }
+
+    @SuppressWarnings("unchecked")
+    private CompletableFuture<Boolean> invokeTeleportAsync(Player player, Location destination) {
+        try {
+            Method method = player.getClass().getMethod("teleportAsync", Location.class);
+            return (CompletableFuture<Boolean>) method.invoke(player, destination);
+        } catch (ReflectiveOperationException ignored) {
+            // teleportAsync not available (shouldn't happen on Folia); fall back to sync.
+            return CompletableFuture.completedFuture(player.teleport(destination));
+        }
     }
 
     private boolean invokeGlobalRun(Runnable task) {
