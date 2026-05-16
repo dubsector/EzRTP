@@ -290,6 +290,8 @@ public class MessageProvider {
             case STATS_BIOME_ACTIVITY_HEADER -> "<gold><bold>Biomes by Activity</bold> <gray>(Page <page>/<total>, Total: <count> biomes):</gray></gold>";
             case STATS_NAVIGATION -> "<gold><bold>Navigation:</bold></gold>";
             case STATS_LEGEND -> "<gold><bold>Legend:</bold></gold>";
+            case COUNTDOWN_PVP_CANCEL -> "<red>Teleport cancelled because you entered combat.</red>";
+            case QUEUE_PVP_TAG_CANCEL -> "<red>Your queued teleport was cancelled because you entered combat.</red>";
         };
     }
 }

@@ -5,6 +5,7 @@ import com.skyblockexp.ezrtp.config.network.TeleportQueueSettings;
 import com.skyblockexp.ezrtp.message.MessageKey;
 import com.skyblockexp.ezrtp.message.MessageProvider;
 import com.skyblockexp.ezrtp.platform.PlatformScheduler;
+import com.skyblockexp.ezrtp.pvptag.PvpTagService;
 import com.skyblockexp.ezrtp.teleport.TeleportReason;
 
 import org.bukkit.entity.Player;
@@ -34,6 +35,7 @@ public final class TeleportQueueManager {
     private boolean queueProcessing;
     private UUID activeTeleportPlayer;
     private QueueExecutionHandler executionHandler;
+    private PvpTagService pvpTagService;
 
     public TeleportQueueManager(
             org.bukkit.plugin.java.JavaPlugin plugin,
@@ -48,6 +50,10 @@ public final class TeleportQueueManager {
 
     public void setExecutionHandler(QueueExecutionHandler executionHandler) {
         this.executionHandler = executionHandler;
+    }
+
+    public void setPvpTagService(PvpTagService pvpTagService) {
+        this.pvpTagService = pvpTagService;
     }
 
     /**
@@ -116,6 +122,16 @@ public final class TeleportQueueManager {
         while ((next = teleportQueue.pollFirst()) != null) {
             Player player = plugin.getServer().getPlayer(next.playerId());
             if (player == null || !player.isOnline()) {
+                continue;
+            }
+            if (pvpTagService != null
+                    && next.settings().getPvpTagIntegrationSettings().isCancelQueuedOnPvpTag()
+                    && pvpTagService.isInCombat(player)) {
+                if (!next.settings().isSuppressPlayerMessages()) {
+                    MessageUtil.send(
+                            player,
+                            messageProvider.format(MessageKey.QUEUE_PVP_TAG_CANCEL, player));
+                }
                 continue;
             }
             activeTeleportPlayer = next.playerId();

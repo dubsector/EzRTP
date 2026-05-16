@@ -20,6 +20,29 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.3.0] - 2026-05-16
+
+### Added
+
+- **PvP tag integration**: EzRTP now detects when a player enters combat and cancels their
+  pending teleport or active countdown. Three plugins are supported out of the box:
+  - **[CombatLogX](https://www.spigotmc.org/resources/combatlogx.31689/)** — auto-detected at startup; soft dependency.
+  - **[PvPManager](https://modrinth.com/plugin/pvpmanager)** — auto-detected at startup; soft dependency.
+  - **[Simple Combat Log](https://modrinth.com/plugin/simple-combatlog)** (NikeyV1/CombatLog) — auto-detected at startup; soft dependency.
+  - All three are added to `softdepend` in `plugin.yml` so they load before EzRTP when
+    present. No configuration change is required on servers that do not use any of them.
+  - New `pvp-tag-integration` section in `rtp.yml`:
+    - `cancel-countdown-on-pvp-tag` (default `true`): cancel an active countdown the moment
+      the player is tagged.
+    - `cancel-queued-on-pvp-tag` (default `true`): skip a queued teleport if the player is
+      already in combat when their slot is dispatched.
+  - New message keys `countdown-pvp-cancel` and `queue-pvp-tag-cancel` in `messages/*.yml`
+    for the cancellation notifications.
+  - Modrinth release metadata now declares `pvpmanager` and `simple-combatlog` as optional
+    dependencies.
+
+---
+
 ## [3.2.3] - 2026-05-16
 
 ### Fixed

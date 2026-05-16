@@ -5,13 +5,13 @@
   <parent>
     <groupId>com.skyblockexp</groupId>
     <artifactId>ezrtp-parent</artifactId>
-    <version>3.2.3</version>
+    <version>3.3.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <groupId>com.skyblockexp</groupId>
   <artifactId>ezrtp-common</artifactId>
-  <version>3.2.3</version>
+  <version>3.3.0</version>
   <packaging>jar</packaging>
   <name>EzRTP Common</name>
   <description>Shared utilities for EzRTP (platform-independent)</description>
@@ -87,6 +87,34 @@
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>7.0.2</version>
+    </dependency>
+
+    <!-- CombatLogX integration — optional soft-dependency; classes only loaded when plugin is present -->
+    <dependency>
+      <groupId>com.github.sirblobman.api</groupId>
+      <artifactId>core</artifactId>
+      <version>2.9-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.sirblobman.combatlogx</groupId>
+      <artifactId>api</artifactId>
+      <version>11.6-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- PvPManager integration — optional soft-dependency; classes only loaded when plugin is present -->
+    <dependency>
+      <groupId>me.chancesd.pvpmanager</groupId>
+      <artifactId>pvpmanager</artifactId>
+      <version>4.0.8</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Simple Combat Log integration — optional soft-dependency; Modrinth: simple-combatlog -->
+    <dependency>
+      <groupId>com.github.NikeyV1</groupId>
+      <artifactId>CombatLog</artifactId>
+      <version>master-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>

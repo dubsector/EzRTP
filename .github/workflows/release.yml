@@ -158,6 +158,8 @@ jobs:
             teams-api(optional)
             ezcountdown(optional)
             ezeconomy(optional)
+            pvpmanager(optional)
+            simple-combatlog(optional)
 
       # ──────────────────────────────────────────────────────────────────────
       #  8. DISCORD NOTIFICATION

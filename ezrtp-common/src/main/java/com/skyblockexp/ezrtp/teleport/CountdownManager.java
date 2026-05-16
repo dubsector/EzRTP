@@ -5,6 +5,7 @@ import com.skyblockexp.ezrtp.config.effects.CountdownParticleSettings;
 import com.skyblockexp.ezrtp.config.RandomTeleportSettings;
 import com.skyblockexp.ezrtp.message.MessageKey;
 import com.skyblockexp.ezrtp.message.MessageProvider;
+import com.skyblockexp.ezrtp.pvptag.PvpTagService;
 import com.skyblockexp.ezrtp.util.MessageUtil;
 
 import org.bukkit.Bukkit;
@@ -28,15 +29,25 @@ public final class CountdownManager {
     private final org.bukkit.plugin.java.JavaPlugin plugin;
     private final PlatformScheduler scheduler;
     private final MessageProvider messageProvider;
+    private final PvpTagService pvpTagService;
     private final Map<UUID, BossBarCompat.Wrapper> countdownBossBars = new HashMap<>();
 
     public CountdownManager(
             org.bukkit.plugin.java.JavaPlugin plugin,
             PlatformScheduler scheduler,
             MessageProvider messageProvider) {
+        this(plugin, scheduler, messageProvider, null);
+    }
+
+    public CountdownManager(
+            org.bukkit.plugin.java.JavaPlugin plugin,
+            PlatformScheduler scheduler,
+            MessageProvider messageProvider,
+            PvpTagService pvpTagService) {
         this.plugin = plugin;
         this.scheduler = scheduler;
         this.messageProvider = messageProvider;
+        this.pvpTagService = pvpTagService;
     }
 
     /**
@@ -98,6 +109,19 @@ public final class CountdownManager {
                             messageProvider.format(MessageKey.COUNTDOWN_MOVE_WARN, player));
                 }
             }
+        }
+
+        // PvP tag cancellation check
+        if (pvpTagService != null
+                && teleportSettings.getPvpTagIntegrationSettings().isCancelCountdownOnPvpTag()
+                && pvpTagService.isInCombat(player)) {
+            clearCountdownBossBar(player.getUniqueId());
+            if (!teleportSettings.isSuppressPlayerMessages()) {
+                MessageUtil.send(
+                        player, messageProvider.format(MessageKey.COUNTDOWN_PVP_CANCEL, player));
+            }
+            if (callback != null) callback.accept(false);
+            return;
         }
 
         // Show countdown tick message

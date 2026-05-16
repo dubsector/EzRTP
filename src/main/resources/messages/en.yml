@@ -169,3 +169,7 @@ stats-cache-info: "<gold><bold>Cache Information:</bold></gold>"
 stats-biome-activity-header: "<gold><bold>Biomes by Activity</bold> <gray>(Page <page>/<total>, Total: <count> biomes):</gray></gold>"
 stats-navigation: "<gold><bold>Navigation:</bold></gold>"
 stats-legend: "<gold><bold>Legend:</bold></gold>"
+
+# PvP tag integration
+countdown-pvp-cancel: "<red>Teleport cancelled because you entered combat.</red>"
+queue-pvp-tag-cancel: "<red>Your queued teleport was cancelled because you entered combat.</red>"

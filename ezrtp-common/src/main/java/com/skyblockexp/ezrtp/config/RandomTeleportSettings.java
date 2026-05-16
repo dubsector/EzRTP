@@ -4,6 +4,7 @@ package com.skyblockexp.ezrtp.config;
 import com.skyblockexp.ezrtp.config.biome.BiomePreCacheSettings;
 import com.skyblockexp.ezrtp.config.biome.BiomeSearchSettings;
 import com.skyblockexp.ezrtp.config.biome.ChunkyIntegrationSettings;
+import com.skyblockexp.ezrtp.config.pvptag.PvpTagIntegrationSettings;
 import com.skyblockexp.ezrtp.config.biome.RareBiomeOptimizationSettings;
 import com.skyblockexp.ezrtp.config.effects.CountdownBossBarSettings;
 import com.skyblockexp.ezrtp.config.effects.CountdownParticleSettings;
@@ -61,6 +62,7 @@ public final class RandomTeleportSettings {
     private final boolean cancelOnMove;
     private final double cancelDistance;
     private final double warnDistance;
+    private final PvpTagIntegrationSettings pvpTagIntegrationSettings;
 
     public RandomTeleportSettings(ConfigurationSection configSection,
                                  String worldName, int centerX, int centerZ, int minimumRadius, int maximumRadius,
@@ -92,7 +94,8 @@ public final class RandomTeleportSettings {
                 minY, maxY, biomeInclude, biomeExclude, protectionSettings, preCacheSettings,
                 rareBiomeOptimizationSettings, chunkLoadingSettings, enableFallbackToCache,
                 biomeSearchSettings, biomeFilteringEnabled, biomeSystemEnabled, safetySettings,
-                searchPattern, chunkyIntegrationSettings, false, true, 2.0, 1.0);
+                searchPattern, chunkyIntegrationSettings, false, true, 2.0, 1.0,
+                PvpTagIntegrationSettings.defaults());
     }
 
     public RandomTeleportSettings(ConfigurationSection configSection,
@@ -126,7 +129,8 @@ public final class RandomTeleportSettings {
                 minY, maxY, biomeInclude, biomeExclude, protectionSettings, preCacheSettings,
                 rareBiomeOptimizationSettings, chunkLoadingSettings, enableFallbackToCache,
                 biomeSearchSettings, biomeFilteringEnabled, biomeSystemEnabled, safetySettings,
-                searchPattern, chunkyIntegrationSettings, suppressPlayerMessages, true, 2.0, 1.0);
+                searchPattern, chunkyIntegrationSettings, suppressPlayerMessages, true, 2.0, 1.0,
+                PvpTagIntegrationSettings.defaults());
     }
 
     public RandomTeleportSettings(ConfigurationSection configSection,
@@ -155,7 +159,8 @@ public final class RandomTeleportSettings {
                                  boolean suppressPlayerMessages,
                                  boolean cancelOnMove,
                                  double cancelDistance,
-                                 double warnDistance) {
+                                 double warnDistance,
+                                 PvpTagIntegrationSettings pvpTagIntegrationSettings) {
         this.configSection = configSection;
         this.worldName = worldName;
         this.centerX = centerX;
@@ -193,6 +198,8 @@ public final class RandomTeleportSettings {
         this.cancelOnMove = cancelOnMove;
         this.cancelDistance = Math.max(0.0, cancelDistance);
         this.warnDistance = Math.max(0.0, warnDistance);
+        this.pvpTagIntegrationSettings =
+                pvpTagIntegrationSettings != null ? pvpTagIntegrationSettings : PvpTagIntegrationSettings.defaults();
     }
         public Integer getMinY() { return minY; }
         public Integer getMaxY() { return maxY; }
@@ -234,6 +241,8 @@ public final class RandomTeleportSettings {
 
     public ChunkyIntegrationSettings getChunkyIntegrationSettings() { return chunkyIntegrationSettings; }
 
+    public PvpTagIntegrationSettings getPvpTagIntegrationSettings() { return pvpTagIntegrationSettings; }
+
     /** Returns {@code true} only when {@code heatmap.enabled: true} is explicitly set in the world's rtp.yml section. */
     public boolean isHeatmapEnabled() {
         return configSection != null && configSection.getBoolean("heatmap.enabled", false);
@@ -263,7 +272,7 @@ public final class RandomTeleportSettings {
                 chunkLoadingSettings, enableFallbackToCache, biomeSearchSettings,
                 biomeFilteringEnabled, biomeSystemEnabled, safetySettings,
                 searchPattern, chunkyIntegrationSettings, suppressPlayerMessages,
-                cancelOnMove, cancelDistance, warnDistance);
+                cancelOnMove, cancelDistance, warnDistance, pvpTagIntegrationSettings);
     }
 
     public RandomTeleportSettings withSuppressPlayerMessages(boolean suppress) {
@@ -278,7 +287,7 @@ public final class RandomTeleportSettings {
                 chunkLoadingSettings, enableFallbackToCache, biomeSearchSettings,
                 biomeFilteringEnabled, biomeSystemEnabled, safetySettings,
                 searchPattern, chunkyIntegrationSettings, suppress,
-                cancelOnMove, cancelDistance, warnDistance);
+                cancelOnMove, cancelDistance, warnDistance, pvpTagIntegrationSettings);
     }
 
     public static RandomTeleportSettings fromConfiguration(ConfigurationSection section, java.util.logging.Logger logger) {
@@ -306,7 +315,8 @@ public final class RandomTeleportSettings {
                 false,
                 true,
                 2.0,
-                1.0);
+                1.0,
+                PvpTagIntegrationSettings.defaults());
         }
 
         String worldName = section.getString("world", "world");
@@ -425,6 +435,9 @@ public final class RandomTeleportSettings {
                 ? countdownSection.getDouble("warn-distance", 1.0)
                 : 1.0;
 
+        PvpTagIntegrationSettings pvpTagIntegrationSettings = PvpTagIntegrationSettings.fromConfiguration(
+                section.getConfigurationSection("pvp-tag-integration"), PvpTagIntegrationSettings.defaults());
+
         return new RandomTeleportSettings(section, worldName, centerX, centerZ, minRadius, maxRadius, maxAttempts, useWorldBorder, unsafeBlocks,
             messages, particleSettings, onJoinTeleportSettings, countdownBossBarSettings, countdownParticleSettings,
             teleportCost, countdownSeconds, countdownChatMessagesEnabled, debugRejectionLogging, minY, maxY,
@@ -443,7 +456,8 @@ public final class RandomTeleportSettings {
             false,
             cancelOnMove,
             cancelDistance,
-            warnDistance);
+            warnDistance,
+            pvpTagIntegrationSettings);
     }
 
     public static RandomTeleportSettings fromConfiguration(ConfigurationSection section, java.util.logging.Logger logger, RandomTeleportSettings fallback) {
@@ -597,6 +611,10 @@ public final class RandomTeleportSettings {
                 ? countdownSection.getDouble("warn-distance", 1.0)
                 : (fallback != null ? fallback.getWarnDistance() : 1.0);
 
+        PvpTagIntegrationSettings pvpTagIntegrationSettings = PvpTagIntegrationSettings.fromConfiguration(
+                section.getConfigurationSection("pvp-tag-integration"),
+                fallback != null ? fallback.getPvpTagIntegrationSettings() : PvpTagIntegrationSettings.defaults());
+
         return new RandomTeleportSettings(section, worldName, centerX, centerZ, minRadius, maxRadius, maxAttempts,
                 useWorldBorder, unsafeBlocks, messages, particleSettings, onJoinTeleportSettings, countdownBossBarSettings,
                 countdownParticleSettings, teleportCost, countdownSeconds, countdownChatMessagesEnabled, debugRejectionLogging, minY, maxY,
@@ -615,7 +633,8 @@ public final class RandomTeleportSettings {
                 fallback != null && fallback.isSuppressPlayerMessages(),
                 cancelOnMove,
                 cancelDistance,
-                warnDistance);
+                warnDistance,
+                pvpTagIntegrationSettings);
     }
     public int getCountdownSeconds() {
         return countdownSeconds;

@@ -67,7 +67,8 @@ class EzRtpServiceEndToEndTest {
                 chunkLoadStrategy,
                 platformRuntime,
                 chunkyProvider,
-                new ChunkyWarmupCoordinator()
+                new ChunkyWarmupCoordinator(),
+                null
         );
 
         assertNotNull(service.getStatistics());

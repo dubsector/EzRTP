@@ -230,6 +230,30 @@ Supported values: `worldguard`, `griefprevention`, `teamsapi`.
 
 ---
 
+## PvP tag integration
+
+Cancels a pending teleport or active countdown when the player enters combat.
+Requires one of the supported PvP tag plugins to be installed (all are soft-dependencies):
+[CombatLogX](https://www.spigotmc.org/resources/combatlogx.31689/),
+[PvPManager](https://modrinth.com/plugin/pvpmanager), or
+[Simple Combat Log](https://modrinth.com/plugin/simple-combatlog).
+
+| Key | Default | Description |
+| :--- | :--- | :--- |
+| `pvp-tag-integration.cancel-countdown-on-pvp-tag` | `true` | Cancel an active countdown the moment the player receives a PvP tag. |
+| `pvp-tag-integration.cancel-queued-on-pvp-tag` | `true` | Skip a queued teleport if the player is already in combat when their slot is dispatched. |
+
+```yml
+pvp-tag-integration:
+  cancel-countdown-on-pvp-tag: true
+  cancel-queued-on-pvp-tag: true
+```
+
+If no supported PvP tag plugin is installed the section is silently ignored.
+See the [PvP Tag integration guide](../integrations/pvp-tag) for setup details.
+
+---
+
 ## Particles (arrival effect)
 
 An optional particle burst played at the destination when the player arrives.

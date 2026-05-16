@@ -20,12 +20,14 @@ public enum MessageKey {
     // Queue messages
     QUEUE_QUEUED("queue-queued"),
     QUEUE_FULL("queue-full"),
+    QUEUE_PVP_TAG_CANCEL("queue-pvp-tag-cancel"),
     
     // Countdown messages
     COUNTDOWN_START("countdown-start"),
     COUNTDOWN_TICK("countdown-tick"),
     COUNTDOWN_MOVE_WARN("countdown-move-warn"),
     COUNTDOWN_MOVE_CANCEL("countdown-move-cancel"),
+    COUNTDOWN_PVP_CANCEL("countdown-pvp-cancel"),
     
     // Cooldown and usage limit messages
     COOLDOWN("cooldown"),
