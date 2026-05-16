@@ -4,7 +4,7 @@
 
   <groupId>com.skyblockexp</groupId>
   <artifactId>ezrtp-parent</artifactId>
-  <version>3.2.3</version>
+  <version>3.3.0</version>
   <packaging>pom</packaging>
   <name>EzRTP Parent</name>
   <description>Aggregator POM for EzRTP multi-module build</description>
@@ -96,6 +96,10 @@
     <repository>
       <id>jitpack</id>
       <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>sirblobman-public</id>
+      <url>https://nexus.sirblobman.xyz/public/</url>
     </repository>
   </repositories>
 

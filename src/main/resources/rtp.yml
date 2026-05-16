@@ -115,6 +115,13 @@ chunky-integration:
     max-coordinator-entries: 2000
     low-memory-retention-minutes: 10
 
+# PvP tag integration — cancels teleport when player enters combat
+pvp-tag-integration:
+  # Cancel active countdown when player is tagged by PvPManager or CombatLogX.
+  cancel-countdown-on-pvp-tag: true
+  # Skip a queued teleport when the player is already in combat at dispatch time.
+  cancel-queued-on-pvp-tag: true
+
 heatmap:
   enabled: false
 

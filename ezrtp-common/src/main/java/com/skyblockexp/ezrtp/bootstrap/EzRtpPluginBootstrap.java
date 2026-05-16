@@ -39,6 +39,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 import com.skyblockexp.ezrtp.teleport.ChunkyProvider;
 import com.skyblockexp.ezrtp.teleport.ChunkyRuntimeProvider;
+import com.skyblockexp.ezrtp.pvptag.PvpTagService;
 // Chunky API is optional; use runtime loader via ChunkyRuntimeProvider
 
 import java.io.File;
@@ -86,6 +87,7 @@ public final class EzRtpPluginBootstrap {
     private UsageResetScheduler usageResetScheduler;
     private final HeatmapSimulationStore heatmapSimulationStore = new HeatmapSimulationStore();
     private com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator;
+    private PvpTagService pvpTagService;
 
     public EzRtpPluginBootstrap(EzRtpPlugin plugin) {
         this.plugin = plugin;
@@ -238,6 +240,24 @@ public final class EzRtpPluginBootstrap {
             plugin.getLogger().info("Chunky integration disabled in configuration.");
             chunkyAPI = null;
         }
+
+        // Initialize PvP tag providers once; registered only when the corresponding plugin is present.
+        if (pvpTagService == null) {
+            pvpTagService = new PvpTagService();
+            if (plugin.getServer().getPluginManager().isPluginEnabled("CombatLogX")) {
+                pvpTagService.registerProvider(new com.skyblockexp.ezrtp.pvptag.CombatLogXPvpTagProvider());
+                plugin.getLogger().info("PvP tag integration: CombatLogX detected.");
+            }
+            if (plugin.getServer().getPluginManager().isPluginEnabled("PvPManager")) {
+                pvpTagService.registerProvider(new com.skyblockexp.ezrtp.pvptag.PvpManagerPvpTagProvider());
+                plugin.getLogger().info("PvP tag integration: PvPManager detected.");
+            }
+            if (plugin.getServer().getPluginManager().isPluginEnabled("CombatLog")) {
+                pvpTagService.registerProvider(new com.skyblockexp.ezrtp.pvptag.SimpleCombatLogPvpTagProvider());
+                plugin.getLogger().info("PvP tag integration: Simple Combat Log detected.");
+            }
+        }
+
         messageProvider = configurationService.getMessageProvider();
         // Initialize text rendering settings (force legacy conversion for older clients)
         boolean forceLegacy = configurationService.getEffectiveBaseConfiguration().getBoolean("messages.force-legacy-colors", false);
@@ -272,7 +292,7 @@ public final class EzRtpPluginBootstrap {
             teleportService = new RandomTeleportService(plugin, defaultSettings,
                 configuration.getQueueSettings(), economyService,
                 (player, settings) -> configuration.resolveTeleportCost(player, settings),
-                protectionRegistry, messageProvider, ChunkLoadStrategyRegistry.get(), PlatformRuntimeRegistry.get(), chunkyAPI, chunkyWarmupCoordinator);
+                protectionRegistry, messageProvider, ChunkLoadStrategyRegistry.get(), PlatformRuntimeRegistry.get(), chunkyAPI, chunkyWarmupCoordinator, pvpTagService);
             try { EzRtpAPI.registerProvider(plugin, teleportService); } catch (Throwable ignored) {}
         } else {
             teleportService.reload(defaultSettings, configuration.getQueueSettings());

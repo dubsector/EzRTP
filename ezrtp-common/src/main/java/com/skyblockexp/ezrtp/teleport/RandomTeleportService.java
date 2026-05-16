@@ -28,6 +28,7 @@ import com.skyblockexp.ezrtp.teleport.search.UniformSearchStrategy;
 import com.skyblockexp.ezrtp.teleport.biome.WeightedRareBiomeStrategy;
 import com.skyblockexp.ezrtp.teleport.queue.ChunkLoadQueue;
 import com.skyblockexp.ezrtp.teleport.queue.TeleportQueueManager;
+import com.skyblockexp.ezrtp.pvptag.PvpTagService;
 import com.skyblockexp.ezrtp.util.DebugFileLogger;
 
 import org.bukkit.Bukkit;
@@ -65,6 +66,7 @@ public final class RandomTeleportService implements com.skyblockexp.ezrtp.api.Te
     private final ChunkyProvider chunkyAPI;
     private final com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator;
     private final HotspotStorage hotspotStorage;
+    private final PvpTagService pvpTagService;
 
     private RandomTeleportSettings settings;
     private TeleportQueueSettings queueSettings;
@@ -80,10 +82,12 @@ public final class RandomTeleportService implements com.skyblockexp.ezrtp.api.Te
                                  ChunkLoadStrategy chunkLoadStrategy,
                                  PlatformRuntime platformRuntime,
                                  ChunkyProvider chunkyAPI,
-                                 com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator) {
+                                 com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator,
+                                 PvpTagService pvpTagService) {
         this.plugin = plugin;
         this.chunkyAPI = chunkyAPI;
         this.chunkyWarmupCoordinator = chunkyWarmupCoordinator;
+        this.pvpTagService = pvpTagService;
         this.debugFileLogger = new DebugFileLogger(plugin);
         this.settings = settings;
         this.queueSettings = queueSettings != null ? queueSettings : TeleportQueueSettings.disabled();
@@ -102,8 +106,9 @@ public final class RandomTeleportService implements com.skyblockexp.ezrtp.api.Te
         this.biomeFilterExecutor = Executors.newSingleThreadExecutor(
             r -> new Thread(r, "ezrtp-biome-filter"));
         this.locationFinder = new LocationFinder(plugin, statistics, biomeCache, rareBiomeRegistry, chunkLoadQueue, locationValidator, searchStrategy, platformRuntime, chunkyAPI, chunkyWarmupCoordinator, biomeFilterExecutor);
-        this.countdownManager = new CountdownManager(plugin, platformRuntime.scheduler(), messageProvider);
+        this.countdownManager = new CountdownManager(plugin, platformRuntime.scheduler(), messageProvider, pvpTagService);
         this.queueManager = new TeleportQueueManager(plugin, platformRuntime.scheduler(), this.queueSettings, messageProvider);
+        this.queueManager.setPvpTagService(pvpTagService);
         this.costCalculator = new TeleportCostCalculator(economyService, costResolver);
         this.teleportExecutor = new TeleportExecutor(plugin, platformRuntime.scheduler(), messageProvider, statistics,
                 costCalculator, countdownManager, locationFinder, queueManager, () -> this.settings);
