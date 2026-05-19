@@ -13,7 +13,14 @@ import com.skyblockexp.ezrtp.teleport.search.UniformSearchStrategy;
 import com.skyblockexp.ezrtp.teleport.heatmap.HeatmapGenerator;
 import com.skyblockexp.ezrtp.teleport.heatmap.HeatmapMapService;
 import com.skyblockexp.ezrtp.teleport.heatmap.HeatmapSimulationStore;
+import com.skyblockexp.ezrtp.teleport.heatmap.ClaimChunkOverlay;
+import com.skyblockexp.ezrtp.teleport.heatmap.ClaimOverlaySettings;
 import com.skyblockexp.ezrtp.util.compat.BiomeCompat;
+import com.skyblockexp.teamsapi.api.TeamsAPI;
+import com.skyblockexp.teamsapi.api.TeamsClaimService;
+import com.skyblockexp.teamsapi.api.TeamsService;
+import com.skyblockexp.teamsapi.model.Team;
+import com.skyblockexp.teamsapi.model.TeamClaim;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -37,6 +44,7 @@ import java.util.function.Supplier;
 public class HeatmapSubcommand extends Subcommand {
 
     private static final String SAVE_SUBCOMMAND = "save";
+    private static final String CLAIMS_OVERLAY_FLAG = "claims-overlay";
     private static final int DEFAULT_GRID_SIZE = 512;
 
     private final EzRtpPlugin plugin;
@@ -81,9 +89,20 @@ public class HeatmapSubcommand extends Subcommand {
             return true;
         }
 
+        boolean overlayRequested = false;
+        List<String> filteredArgs = new ArrayList<>();
+        for (String arg : args) {
+            if (CLAIMS_OVERLAY_FLAG.equalsIgnoreCase(arg)) {
+                overlayRequested = true;
+            } else {
+                filteredArgs.add(arg);
+            }
+        }
+        args = filteredArgs.toArray(new String[0]);
+
         // Check for "save" subcommand
         if (args.length > 0 && SAVE_SUBCOMMAND.equalsIgnoreCase(args[0])) {
-            handleHeatmapSave(player);
+            handleHeatmapSave(player, overlayRequested);
             return true;
         }
 
@@ -98,7 +117,7 @@ public class HeatmapSubcommand extends Subcommand {
             }
         }
 
-        handleHeatmapGeneration(player, targetBiome);
+        handleHeatmapGeneration(player, targetBiome, overlayRequested);
         return true;
     }
 
@@ -112,6 +131,7 @@ public class HeatmapSubcommand extends Subcommand {
         if (args.length == 1) {
             List<String> suggestions = new ArrayList<>();
             suggestions.add(SAVE_SUBCOMMAND);
+            suggestions.add(CLAIMS_OVERLAY_FLAG);
             // Add biome names
             for (Biome biome : Biome.values()) {
                 suggestions.add(BiomeCompat.safeName(biome).toLowerCase());
@@ -125,7 +145,7 @@ public class HeatmapSubcommand extends Subcommand {
     /**
      * Handles heatmap generation and provides the player with a map item.
      */
-    private void handleHeatmapGeneration(Player player, Biome targetBiome) {
+    private void handleHeatmapGeneration(Player player, Biome targetBiome, boolean overlayRequested) {
         RandomTeleportService service = teleportServiceSupplier.get();
         if (service == null) {
             com.skyblockexp.ezrtp.util.MessageUtil.send(player, plugin.getMessageProvider().format(com.skyblockexp.ezrtp.message.MessageKey.COMMAND_SERVICE_NOT_INITIALIZED, player));
@@ -133,8 +153,9 @@ public class HeatmapSubcommand extends Subcommand {
         }
 
         BiomeLocationCache cache = service.getBiomeCache();
-        if (!cache.isEnabled()) {
-            player.sendMessage("§cBiome caching is not enabled. Enable it in config.yml to use heatmap features.");
+        if (targetBiome != null && (cache == null || !cache.isEnabled())) {
+            com.skyblockexp.ezrtp.util.MessageUtil.send(player,
+                    plugin.getMessageProvider().format(com.skyblockexp.ezrtp.message.MessageKey.HEATMAP_BIOME_CACHING_DISABLED, player));
             return;
         }
 
@@ -160,7 +181,9 @@ public class HeatmapSubcommand extends Subcommand {
             return;
         }
         // Generate and give the map to the player
-        ItemStack mapItem = mapService.createHeatmapMap(heatmap, player, centerX, centerZ, radius);
+        ClaimOverlaySettings overlaySettings = resolveOverlaySettings(configuration);
+        List<ClaimChunkOverlay> overlayClaims = resolveOverlayClaims(player, worldName, overlayRequested, overlaySettings);
+        ItemStack mapItem = mapService.createHeatmapMap(heatmap, player, centerX, centerZ, radius, overlayClaims, overlaySettings);
         if (mapItem == null) {
             player.sendMessage("§cFailed to generate heatmap map. Check console for errors.");
             return;
@@ -191,6 +214,9 @@ public class HeatmapSubcommand extends Subcommand {
         if (sampleSet.simulatedCount() > 0) {
             player.sendMessage("§6Simulated Samples: §f" + sampleSet.simulatedCount());
         }
+        if (!overlayClaims.isEmpty()) {
+            player.sendMessage("§6Claim Overlay Chunks: §f" + overlayClaims.size());
+        }
 
         player.sendMessage("§6Grid Size: §f" + heatmap.getGridSize() + " blocks");
         player.sendMessage("");
@@ -200,7 +226,7 @@ public class HeatmapSubcommand extends Subcommand {
     /**
      * Handles saving a heatmap as a PNG file.
      */
-    private void handleHeatmapSave(Player player) {
+    private void handleHeatmapSave(Player player, boolean overlayRequested) {
         RandomTeleportService service = teleportServiceSupplier.get();
         if (service == null) {
             com.skyblockexp.ezrtp.util.MessageUtil.send(player, plugin.getMessageProvider().format(com.skyblockexp.ezrtp.message.MessageKey.COMMAND_SERVICE_NOT_INITIALIZED, player));
@@ -208,10 +234,6 @@ public class HeatmapSubcommand extends Subcommand {
         }
 
         BiomeLocationCache cache = service.getBiomeCache();
-        if (!cache.isEnabled()) {
-            player.sendMessage("§cBiome caching is not enabled. Enable it in config.yml to use heatmap features.");
-            return;
-        }
 
         String worldName = player.getWorld().getName();
         HeatmapSampleSet sampleSet = collectHeatmapSamples(cache, worldName, null);
@@ -239,7 +261,9 @@ public class HeatmapSubcommand extends Subcommand {
         int centerX = settings != null ? settings.getCenterX() : 0;
         int centerZ = settings != null ? settings.getCenterZ() : 0;
         int radius = settings != null ? settings.getMaximumRadius() : 1000;
-        if (mapService.saveHeatmapAsPng(heatmap, outputFile, centerX, centerZ, radius)) {
+        ClaimOverlaySettings overlaySettings = resolveOverlaySettings(configuration);
+        List<ClaimChunkOverlay> overlayClaims = resolveOverlayClaims(player, worldName, overlayRequested, overlaySettings);
+        if (mapService.saveHeatmapAsPng(heatmap, outputFile, centerX, centerZ, radius, overlayClaims, overlaySettings)) {
             player.sendMessage("§aHeatmap saved successfully!");
             player.sendMessage("§7File: §f" + fileName);
             player.sendMessage("§7Location: §fplugins/EzRTP/heatmaps/");
@@ -266,12 +290,15 @@ public class HeatmapSubcommand extends Subcommand {
     }
 
     private HeatmapSampleSet collectHeatmapSamples(BiomeLocationCache cache, String worldName, Biome biome) {
-        if (cache == null || worldName == null) {
+        if (worldName == null) {
             return new HeatmapSampleSet(Collections.emptyList(), 0, 0);
         }
-        List<Location> cached = biome != null
-            ? cache.getLocations(worldName, biome)
-            : cache.getAllLocations(worldName);
+        List<Location> cached = Collections.emptyList();
+        if (cache != null && cache.isEnabled()) {
+            cached = biome != null
+                    ? cache.getLocations(worldName, biome)
+                    : cache.getAllLocations(worldName);
+        }
         List<Location> combined = cached != null
             ? new ArrayList<>(cached)
             : new ArrayList<>();
@@ -291,5 +318,44 @@ public class HeatmapSubcommand extends Subcommand {
         private HeatmapSampleSet {
             samples = samples != null ? samples : Collections.emptyList();
         }
+    }
+
+    private ClaimOverlaySettings resolveOverlaySettings(EzRtpConfiguration configuration) {
+        if (configuration == null || configuration.getDefaultSettings() == null
+                || configuration.getDefaultSettings().getConfigSection() == null
+                || configuration.getDefaultSettings().getConfigSection().getRoot() == null) {
+            return ClaimOverlaySettings.defaults();
+        }
+        return ClaimOverlaySettings.fromConfiguration(configuration.getDefaultSettings().getConfigSection().getRoot());
+    }
+
+    private List<ClaimChunkOverlay> resolveOverlayClaims(Player player,
+                                                         String worldName,
+                                                         boolean overlayRequested,
+                                                         ClaimOverlaySettings settings) {
+        if (!(overlayRequested || settings.enabled())) {
+            return Collections.emptyList();
+        }
+        boolean hasAdminPermission = player.hasPermission("ezrtp.heatmap.claims") || player.isOp();
+        if (!hasAdminPermission) {
+            return Collections.emptyList();
+        }
+        if (!TeamsAPI.isAvailable() || !TeamsAPI.isClaimAvailable()) {
+            return Collections.emptyList();
+        }
+        TeamsService teamsService = TeamsAPI.getService();
+        TeamsClaimService claimService = TeamsAPI.getClaimService();
+        if (teamsService == null || claimService == null) {
+            return Collections.emptyList();
+        }
+        List<ClaimChunkOverlay> result = new ArrayList<>();
+        for (Team team : teamsService.getAllTeams()) {
+            for (TeamClaim claim : claimService.getTeamClaims(team.getId())) {
+                if (worldName.equals(claim.getWorldName())) {
+                    result.add(new ClaimChunkOverlay(claim.getWorldName(), claim.getChunkX(), claim.getChunkZ()));
+                }
+            }
+        }
+        return result;
     }
 }

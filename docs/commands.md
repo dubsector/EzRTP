@@ -10,6 +10,12 @@ nav_order: 3
 - `/rtp`
   - Opens GUI when GUI is enabled.
   - Falls back to direct teleport when GUI is disabled or unavailable.
+- `/rtp faction`
+  - Opens a faction/team claim GUI using TeamsAPI claims.
+  - Selecting a claim uses that claim chunk center and then applies normal configured RTP behavior for that world.
+  - GUI layout and item rendering are configured in `faction-gui.yml`.
+- `/f rtp`
+  - TeamsAPI subcommand integration that opens the same faction/team claim GUI as `/rtp faction`.
 - `/rtp <centerName>`
   - Teleports using the named center configured under `centers.named` in `rtp.yml`.
   - Named center is applied as a center override only; the world's normal RTP settings still apply.
@@ -25,8 +31,11 @@ nav_order: 3
 - `/rtp stats rare-biomes [page]`
 - `/rtp heatmap [biome]`
 - `/rtp heatmap save`
+- `/rtp heatmap claims-overlay`
+- `/rtp heatmap save claims-overlay`
 - `/rtp fake <amount> [world]`
 - `/rtp fake clear [world]`
+- `/rtp fake <amount> claims [world]`
 - `/rtp setcenter <x> <z>`
 - `/rtp setcenter <world> <x> <z>`
 - `/rtp addcenter <name>`
@@ -53,8 +62,11 @@ This centers RTP around the specified WorldGuard region and can apply per-region
 - Stats: `/rtp stats`
 - Biome stats: `/rtp stats biomes`
 - Heatmap map item: `/rtp heatmap`
+- Heatmap map + claim overlay: `/rtp heatmap claims-overlay`
 - Save heatmap image: `/rtp heatmap save`
+- Save heatmap with claim overlay: `/rtp heatmap save claims-overlay`
 - Add fake points: `/rtp fake 100 world`
+- Add fake points on your faction claims: `/rtp fake 100 claims`
 - Clear fake points: `/rtp fake clear world`
 - Set RTP center (current world): `/rtp setcenter 0 0`
 - Save a named center from your current position: `/rtp addcenter spawn`

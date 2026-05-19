@@ -20,6 +20,30 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.3.1] - 2026-05-19
+
+### Added
+
+- **Factions RTP (TeamsAPI)**:
+  - Added `/rtp faction` to open a claim-selection GUI from all TeamsAPI claims available to the player's team.
+  - Added TeamsAPI subcommand integration for `/f rtp` via the TeamsAPI subcommand API (when provided by the installed TeamsAPI version).
+  - Claim selection now sets the selected claim chunk as RTP center and then applies normal per-world RTP behavior/settings.
+- **New `faction-gui.yml` file** for full claim-GUI configuration.
+- **Heatmap claim overlays** (admin insight):
+  - Added claim border overlay mode for `/rtp heatmap` and `/rtp heatmap save` via `claims-overlay` flag.
+  - Added `rtp.yml` options under `heatmap.claims-overlay.*`:
+    - `enabled`
+    - `style` (`border`)
+    - `color`
+    - `line-width`
+- **Claim-constrained fake RTP simulation**:
+  - Added `/rtp fake <amount> claims [world]` to generate simulated points on faction claims owned by the executor’s team.
+
+### Changed
+
+- Faction claim GUI icons now attempt to use player skulls when claimant/owner identity is available, with configurable fallback material when unavailable.
+- Added configurable title, size, claim item format/lore, skull toggle, and navigation slot/name settings for faction GUI pages.
+
 ## [3.3.0] - 2026-05-16
 
 ### Added

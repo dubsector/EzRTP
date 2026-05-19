@@ -14,6 +14,11 @@ import com.skyblockexp.ezrtp.teleport.search.DiamondSearchStrategy;
 import com.skyblockexp.ezrtp.teleport.search.SquareSearchStrategy;
 import com.skyblockexp.ezrtp.teleport.search.UniformSearchStrategy;
 import com.skyblockexp.ezrtp.teleport.heatmap.HeatmapSimulationStore;
+import com.skyblockexp.teamsapi.api.TeamsAPI;
+import com.skyblockexp.teamsapi.api.TeamsClaimService;
+import com.skyblockexp.teamsapi.api.TeamsService;
+import com.skyblockexp.teamsapi.model.Team;
+import com.skyblockexp.teamsapi.model.TeamClaim;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -27,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Supplier;
 
 /**
@@ -73,6 +79,13 @@ public class FakeSubcommand extends Subcommand {
         }
 
         if (args.length == 2) {
+            if ("claims".equalsIgnoreCase(args[1])) {
+                List<String> suggestions = new ArrayList<>();
+                for (World world : Bukkit.getWorlds()) {
+                    suggestions.add(world.getName());
+                }
+                return suggestions;
+            }
             // Suggest world names
             List<String> suggestions = new ArrayList<>();
             for (World world : Bukkit.getWorlds()) {
@@ -103,11 +116,16 @@ public class FakeSubcommand extends Subcommand {
             return;
         }
 
-        String worldArgument = args.length >= 2 ? args[1] : null;
+        boolean claimsMode = args.length >= 2 && "claims".equalsIgnoreCase(args[1]);
+        String worldArgument = claimsMode
+                ? (args.length >= 3 ? args[2] : null)
+                : (args.length >= 2 ? args[1] : null);
         boolean worldProvided = worldArgument != null && !worldArgument.isBlank();
-        World targetWorld = resolveSimulationWorld(sender, worldArgument);
+        World targetWorld = claimsMode ? null : resolveSimulationWorld(sender, worldArgument);
         if (targetWorld == null) {
-            return;
+            if (!claimsMode) {
+                return;
+            }
         }
 
         String action = args[0];
@@ -137,6 +155,11 @@ public class FakeSubcommand extends Subcommand {
         int commandLimit = Math.min(MAX_FAKE_POINTS_PER_COMMAND, heatmapSimulationStore.getPerWorldCapacity());
         if (amount > commandLimit) {
             MessageUtil.send(sender, plugin.getMessageProvider().format(MessageKey.FAKE_AMOUNT_TOO_LARGE, Map.of("limit", String.valueOf(commandLimit))));
+            return;
+        }
+
+        if (claimsMode) {
+            handleFactionClaimSimulation(sender, amount, worldArgument);
             return;
         }
 
@@ -257,6 +280,67 @@ public class FakeSubcommand extends Subcommand {
         return null;
     }
 
+    private void handleFactionClaimSimulation(CommandSender sender, int amount, String worldFilter) {
+        if (!(sender instanceof Player player)) {
+            MessageUtil.send(sender, "<red>Claim-based simulation requires a player context.</red>");
+            return;
+        }
+        if (!TeamsAPI.isAvailable() || !TeamsAPI.isClaimAvailable()) {
+            MessageUtil.send(sender, "<red>TeamsAPI claim service is unavailable.</red>");
+            return;
+        }
+        TeamsService teamsService = TeamsAPI.getService();
+        TeamsClaimService claimService = TeamsAPI.getClaimService();
+        if (teamsService == null || claimService == null) {
+            MessageUtil.send(sender, "<red>TeamsAPI services are unavailable right now.</red>");
+            return;
+        }
+        Team team = teamsService.getPlayerTeam(player.getUniqueId()).orElse(null);
+        if (team == null) {
+            MessageUtil.send(sender, "<red>You are not in a faction/team.</red>");
+            return;
+        }
+        List<TeamClaim> allClaims = new ArrayList<>(claimService.getTeamClaims(team.getId()));
+        if (worldFilter != null && !worldFilter.isBlank()) {
+            allClaims.removeIf(c -> !worldFilter.equalsIgnoreCase(c.getWorldName()));
+        }
+        if (allClaims.isEmpty()) {
+            MessageUtil.send(sender, "<red>Your faction/team has no claims for this simulation scope.</red>");
+            return;
+        }
+
+        Random random = new Random();
+        List<Location> generated = new ArrayList<>(amount);
+        int invalidWorldClaims = 0;
+        for (int i = 0; i < amount; i++) {
+            TeamClaim claim = allClaims.get(random.nextInt(allClaims.size()));
+            World world = Bukkit.getWorld(claim.getWorldName());
+            if (world == null) {
+                invalidWorldClaims++;
+                continue;
+            }
+            int chunkBaseX = claim.getChunkX() * 16;
+            int chunkBaseZ = claim.getChunkZ() * 16;
+            int x = chunkBaseX + random.nextInt(16);
+            int z = chunkBaseZ + random.nextInt(16);
+            generated.add(new Location(world, x, resolveSimulationY(world, null), z));
+        }
+        // Group generated locations per world and save into existing per-world storage buckets.
+        Map<String, List<Location>> byWorld = new java.util.HashMap<>();
+        for (Location location : generated) {
+            byWorld.computeIfAbsent(location.getWorld().getName(), ignored -> new ArrayList<>()).add(location);
+        }
+        int insertedTotal = 0;
+        for (Map.Entry<String, List<Location>> entry : byWorld.entrySet()) {
+            insertedTotal += heatmapSimulationStore.addSamples(entry.getKey(), entry.getValue());
+        }
+        MessageUtil.send(sender, "<green>Added <white>" + insertedTotal + "</white> simulated RTP points on faction claims.</green>");
+        MessageUtil.send(sender, "<gray>Faction claim chunks used: <white>" + allClaims.size() + "</white></gray>");
+        if (invalidWorldClaims > 0) {
+            MessageUtil.send(sender, "<yellow>Skipped <white>" + invalidWorldClaims + "</white> samples due to unloaded claim worlds.</yellow>");
+        }
+    }
+
     private BiomeSearchStrategy resolveSearchStrategy(SearchPattern pattern) {
         if (pattern == null) {
             return new UniformSearchStrategy();
@@ -283,6 +367,10 @@ public class FakeSubcommand extends Subcommand {
     }
 
     private double resolveSimulationY(World world, RandomTeleportSettings settings) {
+        if (settings == null) {
+            Location spawn = world.getSpawnLocation();
+            return spawn != null ? spawn.getY() : 64.0D;
+        }
         if (settings.getMaxY() != null) {
             return (settings.getMinY() + settings.getMaxY()) / 2.0D;
         }

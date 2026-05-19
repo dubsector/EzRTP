@@ -19,6 +19,7 @@ import com.skyblockexp.ezrtp.performance.PerformanceMonitor;
 import com.skyblockexp.ezrtp.unsafe.UnsafeLocationMonitor;
 import com.skyblockexp.ezrtp.unsafe.UnsafeLocationStatistics;
 import com.skyblockexp.ezrtp.gui.RandomTeleportGuiManager;
+import com.skyblockexp.ezrtp.integration.TeamsApiSubcommandBridge;
 import com.skyblockexp.ezrtp.message.MessageProvider;
 import com.skyblockexp.ezrtp.metrics.EzRtpMetricsRegistrar;
 import com.skyblockexp.ezrtp.platform.ChunkLoadStrategyRegistry;
@@ -33,7 +34,7 @@ import com.skyblockexp.ezrtp.teleport.RandomTeleportService;
 import com.skyblockexp.ezrtp.api.TeleportService;
 import com.skyblockexp.ezrtp.api.EzRtpAPI;
 import com.skyblockexp.ezrtp.teleport.heatmap.HeatmapSimulationStore;
-import com.skyblockexp.ezrtp.update.SpigotUpdateChecker;
+import com.skyblockexp.ezrtp.update.ReleaseUpdateChecker;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
@@ -55,7 +56,6 @@ import java.util.Objects;
  */
 public final class EzRtpPluginBootstrap {
 
-    private static final int SPIGOT_RESOURCE_ID = 129828;
     private static final String CORE_PLUGIN_NAME = "EzRTP";
     private static final List<String> RUNTIME_MODULE_PLUGIN_NAMES = List.of(
             "EzRTPPaperModule",
@@ -88,6 +88,7 @@ public final class EzRtpPluginBootstrap {
     private final HeatmapSimulationStore heatmapSimulationStore = new HeatmapSimulationStore();
     private com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator;
     private PvpTagService pvpTagService;
+    private TeamsApiSubcommandBridge teamsApiSubcommandBridge;
 
     public EzRtpPluginBootstrap(EzRtpPlugin plugin) {
         this.plugin = plugin;
@@ -129,7 +130,7 @@ public final class EzRtpPluginBootstrap {
         registerListeners();
         registerCommand();
         initializeMetrics();
-        new SpigotUpdateChecker(plugin, SPIGOT_RESOURCE_ID).checkForUpdates();
+        new ReleaseUpdateChecker(plugin).checkForUpdates();
         plugin.getLogger().info("Ready.");
     }
 
@@ -198,6 +199,10 @@ public final class EzRtpPluginBootstrap {
         if (teleportService != null) {
             teleportService.shutdown();
             try { EzRtpAPI.unregisterProvider(teleportService); } catch (Throwable ignored) {}
+        }
+        if (teamsApiSubcommandBridge != null) {
+            teamsApiSubcommandBridge.unregister();
+            teamsApiSubcommandBridge = null;
         }
         networkCoordinator.shutdown();
         plugin.getLogger().info("EzRTP plugin disabled.");
@@ -399,8 +404,10 @@ public final class EzRtpPluginBootstrap {
 
     private void registerCommand() {
         RandomTeleportGuiManager guiManager = listenerRegistrar.getGuiManager();
+        var factionClaimGuiManager = listenerRegistrar.getFactionClaimGuiManager();
         RandomTeleportCommand command = new RandomTeleportCommand(plugin, this::getTeleportService,
-            this::getConfiguration, this::getProtectionRegistry, guiManager, usageStorage, heatmapSimulationStore, chunkyAPI, chunkyWarmupCoordinator);
+            this::getConfiguration, this::getProtectionRegistry, guiManager, factionClaimGuiManager,
+                usageStorage, heatmapSimulationStore, chunkyAPI, chunkyWarmupCoordinator);
         PluginCommand pluginCommand = Objects.requireNonNull(plugin.getCommand("rtp"), "rtp command not defined in plugin.yml");
         pluginCommand.setExecutor(command);
         pluginCommand.setTabCompleter(command);
@@ -411,6 +418,9 @@ public final class EzRtpPluginBootstrap {
         PluginCommand forceRtpPluginCommand = Objects.requireNonNull(plugin.getCommand("forcertp"), "forcertp command not defined in plugin.yml");
         forceRtpPluginCommand.setExecutor(forceRtpCommand);
         forceRtpPluginCommand.setTabCompleter(forceRtpCommand);
+
+        teamsApiSubcommandBridge = new TeamsApiSubcommandBridge(plugin, factionClaimGuiManager);
+        teamsApiSubcommandBridge.register();
     }
 
     private void registerListeners() {

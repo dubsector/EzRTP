@@ -40,6 +40,9 @@ permissions:
   ezrtp.heatmap.fake:
     description: Allows injecting simulated RTP locations via /rtp fake.
     default: op
+  ezrtp.heatmap.claims:
+    description: Allows rendering TeamsAPI claim overlays on RTP heatmaps.
+    default: op
   ezrtp.queue.bypass:
     description: Allows bypassing the random teleport queue.
     default: op

@@ -17,6 +17,7 @@ Supported provider names in config:
 - `worldguard` — WorldGuard protected regions
 - `griefprevention` — GriefPrevention claims
 - `teamsapi` — Chunk claims managed by any [TeamsAPI](https://modrinth.com/plugin/teams-api)-compatible team plugin
+  - Also enables faction RTP claim routing with `/rtp faction` and `/f rtp` (TeamsAPI subcommand API).
 
 If a provider plugin is not installed, EzRTP continues with available providers (safe fallback behavior).
 

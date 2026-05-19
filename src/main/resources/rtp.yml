@@ -125,6 +125,16 @@ pvp-tag-integration:
 heatmap:
   enabled: false
 
+  claims-overlay:
+    # Enables claim overlays on generated heatmaps when requested by admins.
+    enabled: false
+    # Current supported style: border
+    style: border
+    # Border color in hex RGB format.
+    color: "#00FFFF"
+    # Border thickness in pixels (1-4).
+    line-width: 1
+
 biomes:
   # Master kill-switch. Set to false to disable all biome infrastructure
   # (include/exclude filtering, pre-cache, rare-biome optimization) regardless

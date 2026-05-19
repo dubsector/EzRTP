@@ -16,6 +16,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Service for creating and managing heatmap maps.
@@ -43,12 +45,22 @@ public final class HeatmapMapService {
      * @return the map item, or null if creation failed
      */
     public ItemStack createHeatmapMap(HeatmapGenerator.HeatmapData heatmapData, Player player, int centerX, int centerZ, int radius) {
+        return createHeatmapMap(heatmapData, player, centerX, centerZ, radius, Collections.emptyList(), ClaimOverlaySettings.defaults());
+    }
+
+    public ItemStack createHeatmapMap(HeatmapGenerator.HeatmapData heatmapData,
+                                      Player player,
+                                      int centerX,
+                                      int centerZ,
+                                      int radius,
+                                      List<ClaimChunkOverlay> claimOverlays,
+                                      ClaimOverlaySettings overlaySettings) {
         if (heatmapData == null || heatmapData.getTotalLocations() < MIN_DATA_THRESHOLD) {
             return null;
         }
         try {
             HeatmapImageGenerator imageGenerator = new HeatmapImageGenerator();
-            BufferedImage heatmapImage = imageGenerator.generate(heatmapData, centerX, centerZ, radius);
+            BufferedImage heatmapImage = imageGenerator.generate(heatmapData, centerX, centerZ, radius, claimOverlays, overlaySettings);
             MapView mapView = Bukkit.createMap(player.getWorld());
             for (MapRenderer renderer : mapView.getRenderers()) {
                 mapView.removeRenderer(renderer);
@@ -84,12 +96,22 @@ public final class HeatmapMapService {
      * @return true if successful, false otherwise
      */
     public boolean saveHeatmapAsPng(HeatmapGenerator.HeatmapData heatmapData, File outputFile, int centerX, int centerZ, int radius) {
+        return saveHeatmapAsPng(heatmapData, outputFile, centerX, centerZ, radius, Collections.emptyList(), ClaimOverlaySettings.defaults());
+    }
+
+    public boolean saveHeatmapAsPng(HeatmapGenerator.HeatmapData heatmapData,
+                                    File outputFile,
+                                    int centerX,
+                                    int centerZ,
+                                    int radius,
+                                    List<ClaimChunkOverlay> claimOverlays,
+                                    ClaimOverlaySettings overlaySettings) {
         if (heatmapData == null || heatmapData.getTotalLocations() < MIN_DATA_THRESHOLD) {
             return false;
         }
         try {
             HeatmapImageGenerator imageGenerator = new HeatmapImageGenerator();
-            BufferedImage heatmapImage = imageGenerator.generate(heatmapData, centerX, centerZ, radius);
+            BufferedImage heatmapImage = imageGenerator.generate(heatmapData, centerX, centerZ, radius, claimOverlays, overlaySettings);
             File parentDir = outputFile.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs();

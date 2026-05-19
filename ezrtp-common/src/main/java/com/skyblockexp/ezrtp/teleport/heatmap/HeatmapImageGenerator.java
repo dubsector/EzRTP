@@ -2,7 +2,10 @@ package com.skyblockexp.ezrtp.teleport.heatmap;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.BasicStroke;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,6 +62,15 @@ public final class HeatmapImageGenerator {
      * @return a BufferedImage containing the heatmap visualization
      */
     public BufferedImage generate(HeatmapGenerator.HeatmapData heatmapData, int centerX, int centerZ, int radius) {
+        return generate(heatmapData, centerX, centerZ, radius, Collections.emptyList(), ClaimOverlaySettings.defaults());
+    }
+
+    public BufferedImage generate(HeatmapGenerator.HeatmapData heatmapData,
+                                  int centerX,
+                                  int centerZ,
+                                  int radius,
+                                  List<ClaimChunkOverlay> claimChunks,
+                                  ClaimOverlaySettings overlaySettings) {
         if (heatmapData == null || heatmapData.getTotalLocations() == 0) {
             return createEmptyMap();
         }
@@ -128,8 +140,50 @@ public final class HeatmapImageGenerator {
             }
         }
         drawLegend(g2d, mapSize);
+        drawClaimOverlays(g2d, minWorldX, maxWorldX, minWorldZ, maxWorldZ,
+                claimChunks != null ? claimChunks : Collections.emptyList(),
+                overlaySettings != null ? overlaySettings : ClaimOverlaySettings.defaults());
         g2d.dispose();
         return image;
+    }
+
+    private void drawClaimOverlays(Graphics2D g2d,
+                                   int minWorldX,
+                                   int maxWorldX,
+                                   int minWorldZ,
+                                   int maxWorldZ,
+                                   List<ClaimChunkOverlay> claimChunks,
+                                   ClaimOverlaySettings settings) {
+        if (claimChunks.isEmpty() || !settings.enabled() || settings.style() != ClaimOverlayStyle.BORDER) {
+            return;
+        }
+
+        g2d.setColor(settings.color());
+        g2d.setStroke(new BasicStroke(settings.lineWidth()));
+        int worldWidth = Math.max(1, maxWorldX - minWorldX);
+        int worldHeight = Math.max(1, maxWorldZ - minWorldZ);
+
+        for (ClaimChunkOverlay chunk : claimChunks) {
+            int chunkMinX = chunk.chunkX() * 16;
+            int chunkMaxX = chunkMinX + 16;
+            int chunkMinZ = chunk.chunkZ() * 16;
+            int chunkMaxZ = chunkMinZ + 16;
+
+            double relMinX = (double) (chunkMinX - minWorldX) / worldWidth;
+            double relMaxX = (double) (chunkMaxX - minWorldX) / worldWidth;
+            double relMinZ = (double) (chunkMinZ - minWorldZ) / worldHeight;
+            double relMaxZ = (double) (chunkMaxZ - minWorldZ) / worldHeight;
+
+            int px = Math.max(0, Math.min(mapSize - 1, (int) Math.round(relMinX * mapSize)));
+            int pz = Math.max(0, Math.min(mapSize - 1, (int) Math.round(relMinZ * mapSize)));
+            int pw = Math.max(1, (int) Math.round((relMaxX - relMinX) * mapSize));
+            int ph = Math.max(1, (int) Math.round((relMaxZ - relMinZ) * mapSize));
+            if (px < mapSize && pz < mapSize) {
+                int maxWidth = mapSize - px - 1;
+                int maxHeight = mapSize - pz - 1;
+                g2d.drawRect(px, pz, Math.max(1, Math.min(pw, maxWidth)), Math.max(1, Math.min(ph, maxHeight)));
+            }
+        }
     }
     
     /**

@@ -24,6 +24,7 @@ Java 17+, packaged for Bukkit/Paper/Spigot/Purpur/Folia.
 - Named centers (`/rtp addcenter`, `/rtp <center-name>`) and center editing (`/rtp setcenter`).
 - Optional network selector entries via `network.yml`.
 - Optional Chunky pre-generation command (`/rtp pregenerate [world] [radius]`).
+- TeamsAPI-powered faction claim RTP selection via `/rtp faction` and `/f rtp`.
 - Optional performance and unsafe-location monitoring exports.
 - Folia-compatible runtime behavior for modern server scheduling models.
 
@@ -50,6 +51,7 @@ Java 17+, packaged for Bukkit/Paper/Spigot/Purpur/Folia.
 | Command | Description | Permission |
 |---|---|---|
 | `/rtp` | Default RTP flow (GUI or direct teleport based on setup) | `ezrtp.use` |
+| `/rtp faction` | Open claim GUI and RTP around selected faction claim center | `ezrtp.use` |
 | `/forcertp <player> [world]` | Force RTP for a target player | `ezrtp.forcertp` |
 
 ### `/rtp` Subcommands

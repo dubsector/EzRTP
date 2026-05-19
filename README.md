@@ -45,7 +45,7 @@ It is designed for **safety-first teleportation**, **cross-platform compatibilit
 - **Biome-aware and cache-assisted searching** with optional rare-biome optimization.
 - **Heatmap/statistics tooling** for operators to inspect RTP distribution and performance.
 - **WorldGuard region command mode** for region-scoped RTP entry points.
-- **TeamsAPI integration** to skip chunk-claimed areas (works with any TeamsAPI-compatible team plugin).
+- **TeamsAPI integration** to skip chunk-claimed areas and power faction-claim RTP selection (works with any TeamsAPI-compatible team plugin).
 - **Optional first-join/on-join teleport flow**.
 - **Optional proxy/network destination menu support** for multi-server setups.
 - **Chunky integration** for pre-generation workflows.
@@ -95,6 +95,8 @@ It is designed for **safety-first teleportation**, **cross-platform compatibilit
 ### Player commands
 
 - `/rtp` - Random teleport (or opens GUI when enabled).
+- `/rtp faction` - Open faction/team claim selection GUI (TeamsAPI), then RTP around the selected claim center.
+- `/f rtp` - TeamsAPI faction subcommand route to the same claim selection GUI.
 
 ### Admin / utility subcommands
 
@@ -102,6 +104,8 @@ It is designed for **safety-first teleportation**, **cross-platform compatibilit
 - `/rtp stats` - Show RTP statistics and performance details.
 - `/rtp heatmap` - View heatmap information.
 - `/rtp fake <amount|clear> [world]` - Inject/clear simulated heatmap points.
+- `/rtp heatmap claims-overlay` - Render heatmap with TeamsAPI claim chunk borders (admin-scoped).
+- `/rtp fake <amount> claims [world]` - Inject simulated heatmap points constrained to your faction claims.
 - `/rtp setcenter <x> <z>` or `/rtp setcenter <world> <x> <z>` - Update RTP center.
 - `/rtp pregenerate [world] [radius]` - Trigger Chunky-assisted pre-generation workflow.
 - `/forcertp <player> [world]` - Force teleport a target player.
@@ -118,6 +122,7 @@ It is designed for **safety-first teleportation**, **cross-platform compatibilit
 - `ezrtp.stats` - Access `/rtp stats`.
 - `ezrtp.heatmap` - Access `/rtp heatmap`.
 - `ezrtp.heatmap.fake` - Access `/rtp fake`.
+- `ezrtp.heatmap.claims` - Access claim overlay rendering on heatmaps.
 - `ezrtp.queue.bypass` - Bypass queue restrictions.
 
 ### Permissions Reference
@@ -152,6 +157,7 @@ EzRTP splits configuration into focused files for maintainability:
 - `storage.yml` - Usage/cooldown backend (YAML/MySQL).
 - `queue.yml` - Queue throttling behavior.
 - `gui.yml` - GUI menu layout, world entries, and icons.
+- `faction-gui.yml` - Faction claim GUI layout/icons/navigation for `/rtp faction` and `/f rtp`.
 - `network.yml` - Proxy/server destination entries.
 - `force-rtp.yml` - `/forcertp` command behavior.
 - `messages/*.yml` - Localized messages.
@@ -210,6 +216,7 @@ Configuration and message references in this repository:
 - Limits and cooldowns: [`limits.yml`](src/main/resources/limits.yml)
 - Queue settings: [`queue.yml`](src/main/resources/queue.yml)
 - GUI settings: [`gui.yml`](src/main/resources/gui.yml)
+- Faction GUI settings: [`faction-gui.yml`](src/main/resources/faction-gui.yml)
 - Network/proxy settings: [`network.yml`](src/main/resources/network.yml)
 - Storage backend config: [`storage.yml`](src/main/resources/storage.yml)
 - Force RTP behavior: [`force-rtp.yml`](src/main/resources/force-rtp.yml)
@@ -220,6 +227,7 @@ Configuration documentation files:
 
 - Main config documentation: [`docs/config/config.md`](docs/config/config.md)
 - Core configuration reference (`config.yml`, `rtp.yml`, `limits.yml`, `storage.yml`, `force-rtp.yml`): [`docs/config-core-reference.md`](docs/config-core-reference.md)
+- Faction GUI config reference: [`docs/config/faction-gui.md`](docs/config/faction-gui.md)
 - GUI/queue/network reference (`gui.yml`, `queue.yml`, `network.yml`): [`docs/config-gui-queue-network-reference.md`](docs/config-gui-queue-network-reference.md)
 
 - Integration docs:

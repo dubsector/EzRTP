@@ -13,8 +13,17 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import com.skyblockexp.ezrtp.message.MessageKey;
+import com.skyblockexp.ezrtp.message.MessageProvider;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Handles configuration reloads, auxiliary file management, and localized message provisioning.
@@ -38,6 +47,7 @@ public final class ConfigurationService {
         FileConfiguration storageConfiguration = loadExternalConfiguration("storage.yml");
         FileConfiguration messagesConfiguration;
         FileConfiguration guiConfiguration;
+        FileConfiguration factionGuiConfiguration;
         FileConfiguration queueConfiguration;
         FileConfiguration networkConfiguration;
 
@@ -53,6 +63,7 @@ public final class ConfigurationService {
         String language = effectiveBaseConfiguration.getString("language", "en");
         messagesConfiguration = loadExternalConfiguration("messages/" + language + ".yml");
         guiConfiguration = loadExternalConfiguration("gui.yml");
+        factionGuiConfiguration = loadExternalConfiguration("faction-gui.yml");
         queueConfiguration = loadExternalConfiguration("queue.yml");
         networkConfiguration = loadExternalConfiguration("network.yml");
 
@@ -65,6 +76,7 @@ public final class ConfigurationService {
                 effectiveBaseConfiguration,
                 selectSection(messagesConfiguration, "messages", fallbackMessages),
                 selectSection(guiConfiguration, "gui", fallbackGui),
+                selectSection(factionGuiConfiguration, "faction-gui", null),
                 selectSection(queueConfiguration, "queue", fallbackQueue),
                 selectSection(networkConfiguration, "network", fallbackNetwork),
                 plugin.getLogger());
@@ -110,6 +122,7 @@ public final class ConfigurationService {
         saveResourceIfMissing("limits.yml");
         saveResourceIfMissing("storage.yml");
         saveResourceIfMissing("gui.yml");
+        saveResourceIfMissing("faction-gui.yml");
         saveResourceIfMissing("queue.yml");
         saveResourceIfMissing("network.yml");
         saveResourceIfMissing("force-rtp.yml");
@@ -174,7 +187,73 @@ public final class ConfigurationService {
             }
         }
 
+        repairCorruptedLanguageFile(language, targetLanguageFile);
+        ensureLanguageFileHasAllKeys(language, targetLanguageFile);
         messageProvider = MessageProvider.load(messagesDir, language, plugin.getLogger());
+    }
+
+    private void repairCorruptedLanguageFile(String language, File languageFile) {
+        if (languageFile == null || !languageFile.exists()) {
+            return;
+        }
+        try {
+            List<String> lines = Files.readAllLines(languageFile.toPath(), StandardCharsets.UTF_8);
+            boolean javaSnippetDetected = lines.stream().anyMatch(line ->
+                    line.contains("package com.skyblockexp.ezrtp.message")
+                            || line.contains("case TELEPORTING ->"));
+            if (!javaSnippetDetected) {
+                return;
+            }
+
+            File backup = new File(languageFile.getParentFile(), language.toLowerCase() + ".yml.bak");
+            Files.copy(languageFile.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            if ("en".equalsIgnoreCase(language)) {
+                plugin.saveResource("messages/en.yml", true);
+                plugin.getLogger().warning("Detected corrupted messages/en.yml. "
+                        + "Backed up to messages/en.yml.bak and restored defaults.");
+            } else {
+                YamlConfiguration restored = new YamlConfiguration();
+                for (MessageKey key : MessageKey.values()) {
+                    restored.set(key.getKey(), MessageProvider.createDefault("en", plugin.getLogger()).getMessage(key));
+                }
+                restored.save(languageFile);
+                plugin.getLogger().warning("Detected corrupted language file '" + language + ".yml'. "
+                        + "Backed up to " + backup.getName() + " and restored default keys in English.");
+            }
+        } catch (IOException ex) {
+            plugin.getLogger().warning("Failed to verify/repair messages/" + language + ".yml: " + ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            plugin.getLogger().warning("Failed to restore bundled messages/" + language + ".yml: " + ex.getMessage());
+        }
+    }
+
+    private void ensureLanguageFileHasAllKeys(String language, File languageFile) {
+        if (languageFile == null || !languageFile.exists()) {
+            return;
+        }
+        try {
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(languageFile);
+            ConfigurationSection section = config.isConfigurationSection("messages")
+                    ? config.getConfigurationSection("messages")
+                    : config;
+            if (section == null) {
+                section = config;
+            }
+            int added = 0;
+            MessageProvider defaults = MessageProvider.createDefault("en", plugin.getLogger());
+            for (MessageKey key : MessageKey.values()) {
+                if (!section.contains(key.getKey())) {
+                    section.set(key.getKey(), defaults.getMessage(key));
+                    added++;
+                }
+            }
+            if (added > 0) {
+                config.save(languageFile);
+                plugin.getLogger().info("Added " + added + " missing message keys to messages/" + language + ".yml");
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().warning("Failed to backfill missing keys for messages/" + language + ".yml: " + ex.getMessage());
+        }
     }
 
     private void saveResourceIfMissing(String resource) {
