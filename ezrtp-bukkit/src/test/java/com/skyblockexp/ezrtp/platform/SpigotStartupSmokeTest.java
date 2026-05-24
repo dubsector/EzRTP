@@ -2,6 +2,7 @@ package com.skyblockexp.ezrtp.platform;
 
 import com.skyblockexp.ezrtp.EzRtpPlugin;
 import com.skyblockexp.ezrtp.gui.FactionClaimSelectionGuiManager;
+import com.skyblockexp.ezrtp.integration.TeamsApiSubcommandBridge;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -155,5 +156,38 @@ class SpigotStartupSmokeTest {
 
         boolean result = assertDoesNotThrow(() -> guiManager.openSelection(null));
         assertTrue(result);
+    }
+
+    // --- TeamsAPI optionality: TeamsApiSubcommandBridge ---
+
+    /**
+     * Verifies that instantiating {@link TeamsApiSubcommandBridge} and calling
+     * {@link TeamsApiSubcommandBridge#register()} does <em>not</em> throw
+     * {@link NoClassDefFoundError} when TeamsAPI is not installed.
+     *
+     * <p>This is the regression test for the crash in
+     * {@code EzRtpPluginBootstrap.registerCommand()} where constructing
+     * {@code TeamsApiSubcommandBridge} caused {@code NoClassDefFoundError} for
+     * {@code com/skyblockexp/teamsapi/api/TeamsSubcommand} because that type was referenced
+     * in a {@code checkcast} instruction inside {@code unregister()}, which the JVM's bytecode
+     * verifier resolved at class-load time.
+     */
+    @Test
+    void teamsApiSubcommandBridge_register_withoutTeamsApi_doesNotThrow() {
+        Plugin mockPlugin = mock(Plugin.class);
+        Server mockServer = mock(Server.class);
+        PluginManager mockPm = mock(PluginManager.class);
+
+        when(mockPlugin.getServer()).thenReturn(mockServer);
+        when(mockServer.getPluginManager()).thenReturn(mockPm);
+        when(mockPm.isPluginEnabled("TeamsAPI")).thenReturn(false);
+
+        EzRtpPlugin ezPlugin = mock(EzRtpPlugin.class);
+        FactionClaimSelectionGuiManager gui = new FactionClaimSelectionGuiManager(
+                ezPlugin, () -> null, () -> null, () -> null, null);
+
+        TeamsApiSubcommandBridge bridge =
+                assertDoesNotThrow(() -> new TeamsApiSubcommandBridge(mockPlugin, gui));
+        assertDoesNotThrow(bridge::register);
     }
 }
