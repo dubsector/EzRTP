@@ -15,6 +15,7 @@ softdepend:
   - CombatLogX
   - PvPManager
   - CombatLog
+  - EzCountdown
 commands:
   rtp:
     description: Teleport to a random safe location in the configured world.

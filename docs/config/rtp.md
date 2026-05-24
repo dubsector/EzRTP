@@ -94,6 +94,27 @@ countdown:
   chat-messages: false
 ```
 
+### EzCountdown display (optional)
+
+When [EzCountdown](../integrations/ezcountdown) is installed, EzRTP can delegate
+the countdown display to it for richer, configurable channels.
+
+| Key | Default | Description |
+| :--- | :--- | :--- |
+| `countdown.ezcountdown.enabled` | `false` | Hand countdown display off to EzCountdown. Falls back to the built-in display when `false` or when EzCountdown is absent. |
+| `countdown.ezcountdown.display-types` | `[ACTION_BAR, BOSS_BAR]` | Display channels EzCountdown renders. Accepted values: `ACTION_BAR`, `BOSS_BAR`, `TITLE`, `CHAT`, `SCOREBOARD`, `DIALOG`. |
+| `countdown.ezcountdown.format` | `<yellow>Teleporting in <white>{formatted}</white>...</yellow>` | MiniMessage string shown by each active display channel. `{formatted}` is replaced with the remaining time. |
+
+```yml
+countdown:
+  ezcountdown:
+    enabled: false
+    display-types:
+      - ACTION_BAR
+      - BOSS_BAR
+    format: "<yellow>Teleporting in <white>{formatted}</white>...</yellow>"
+```
+
 ---
 
 ## Safety

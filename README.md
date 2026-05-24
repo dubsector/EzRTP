@@ -44,6 +44,7 @@ It is designed for **safety-first teleportation**, **cross-platform compatibilit
 - **Queue system** to smooth heavy RTP usage on busy servers.
 - **Biome-aware and cache-assisted searching** with optional rare-biome optimization.
 - **Heatmap/statistics tooling** for operators to inspect RTP distribution and performance.
+- **Release update notifier** using free APIs with Modrinth primary and GitHub Releases fallback.
 - **WorldGuard region command mode** for region-scoped RTP entry points.
 - **TeamsAPI integration** to skip chunk-claimed areas and power faction-claim RTP selection (works with any TeamsAPI-compatible team plugin).
 - **Optional first-join/on-join teleport flow**.
@@ -161,6 +162,8 @@ EzRTP splits configuration into focused files for maintainability:
 - `network.yml` - Proxy/server destination entries.
 - `force-rtp.yml` - `/forcertp` command behavior.
 - `messages/*.yml` - Localized messages.
+  - Supports both top-level keys and `messages.*` nested layout.
+  - Missing keys are backfilled automatically on startup without overwriting existing translations.
 
 ---
 

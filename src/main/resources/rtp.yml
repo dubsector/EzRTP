@@ -66,6 +66,16 @@ countdown:
     secondary-count: 6
     secondary-offset: 0.35
   chat-messages: false
+  # EzCountdown integration — requires the EzCountdown plugin to be installed.
+  ezcountdown:
+    # Whether to use EzCountdown for countdown display.
+    enabled: false
+    # Display types. Options: ACTION_BAR, BOSS_BAR, CHAT, TITLE, SCOREBOARD, DIALOG
+    display-types:
+      - ACTION_BAR
+      - BOSS_BAR
+    # Message format. {formatted} = remaining time, {name} = countdown name.
+    format: "<yellow>Teleporting in <white>{formatted}</white>...</yellow>"
 
 unsafe-blocks:
   - WATER

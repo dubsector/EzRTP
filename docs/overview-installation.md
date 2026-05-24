@@ -33,6 +33,9 @@ Optional integrations (soft dependencies):
 - GriefPrevention
 - PlaceholderAPI
 - Chunky
+- TeamsAPI
+- EzCountdown
+- CombatLogX / PvPManager / Simple Combat Log
 
 If an integration is missing, EzRTP still works and disables only that integration path.
 

@@ -143,6 +143,10 @@ public final class RandomTeleportService implements com.skyblockexp.ezrtp.api.Te
         locationValidator.setProtectionRegistry(protectionRegistry);
     }
 
+    public void setEzCountdownBridge(com.skyblockexp.ezrtp.integration.EzCountdownDisplayBridge bridge) {
+        countdownManager.setEzCountdownBridge(bridge);
+    }
+
     public RtpStatistics getStatistics() {
         return statistics;
     }

@@ -17,3 +17,9 @@ full details on each file.
 - `faction-gui.yml`
 - `queue.yml`
 - `network.yml`
+- `messages/*.yml` (top-level keys and nested `messages.*` keys are both supported)
+
+Notes:
+
+- Missing message keys in language files are backfilled automatically on startup.
+- Existing translated/customized message values are preserved during backfill.

@@ -19,6 +19,8 @@ import com.skyblockexp.ezrtp.performance.PerformanceMonitor;
 import com.skyblockexp.ezrtp.unsafe.UnsafeLocationMonitor;
 import com.skyblockexp.ezrtp.unsafe.UnsafeLocationStatistics;
 import com.skyblockexp.ezrtp.gui.RandomTeleportGuiManager;
+import com.skyblockexp.ezrtp.integration.EzCountdownDisplayBridge;
+import com.skyblockexp.ezrtp.integration.EzCountdownDisplayBridgeImpl;
 import com.skyblockexp.ezrtp.integration.TeamsApiSubcommandBridge;
 import com.skyblockexp.ezrtp.message.MessageProvider;
 import com.skyblockexp.ezrtp.metrics.EzRtpMetricsRegistrar;
@@ -89,6 +91,7 @@ public final class EzRtpPluginBootstrap {
     private com.skyblockexp.ezrtp.teleport.ChunkyWarmupCoordinator chunkyWarmupCoordinator;
     private PvpTagService pvpTagService;
     private TeamsApiSubcommandBridge teamsApiSubcommandBridge;
+    private EzCountdownDisplayBridge ezCountdownBridge;
 
     public EzRtpPluginBootstrap(EzRtpPlugin plugin) {
         this.plugin = plugin;
@@ -264,6 +267,25 @@ public final class EzRtpPluginBootstrap {
         }
 
         messageProvider = configurationService.getMessageProvider();
+        // Initialize EzCountdown integration bridge when EzCountdown is present.
+        if (ezCountdownBridge == null
+                && plugin.getServer().getPluginManager().isPluginEnabled("EzCountdown")) {
+            try {
+                ezCountdownBridge = new EzCountdownDisplayBridgeImpl(plugin);
+                plugin.getServer().getPluginManager().registerEvents(
+                        (org.bukkit.event.Listener) ezCountdownBridge, plugin);
+                plugin.getLogger().info("EzCountdown integration enabled.");
+            } catch (NoClassDefFoundError e) {
+                plugin.getLogger().warning("Failed to initialize EzCountdown integration: " + e.getMessage());
+                ezCountdownBridge = null;
+            } catch (Throwable e) {
+                plugin.getLogger().warning("Failed to initialize EzCountdown integration: " + e.getMessage());
+                ezCountdownBridge = null;
+            }
+        }
+        if (teleportService != null) {
+            teleportService.setEzCountdownBridge(ezCountdownBridge);
+        }
         // Initialize text rendering settings (force legacy conversion for older clients)
         boolean forceLegacy = configurationService.getEffectiveBaseConfiguration().getBoolean("messages.force-legacy-colors", false);
         com.skyblockexp.ezrtp.util.MessageUtil.setForceLegacyColors(forceLegacy);
@@ -298,13 +320,13 @@ public final class EzRtpPluginBootstrap {
                 configuration.getQueueSettings(), economyService,
                 (player, settings) -> configuration.resolveTeleportCost(player, settings),
                 protectionRegistry, messageProvider, ChunkLoadStrategyRegistry.get(), PlatformRuntimeRegistry.get(), chunkyAPI, chunkyWarmupCoordinator, pvpTagService);
+            teleportService.setEzCountdownBridge(ezCountdownBridge);
             try { EzRtpAPI.registerProvider(plugin, teleportService); } catch (Throwable ignored) {}
         } else {
             teleportService.reload(defaultSettings, configuration.getQueueSettings());
             teleportService.setEconomyService(economyService);
             teleportService.setCostResolver((player, settings) -> configuration.resolveTeleportCost(player, settings));
-            teleportService.setProtectionRegistry(protectionRegistry);
-            try { EzRtpAPI.registerProvider(plugin, teleportService); } catch (Throwable ignored) {}
+            teleportService.setProtectionRegistry(protectionRegistry);            teleportService.setEzCountdownBridge(ezCountdownBridge);            try { EzRtpAPI.registerProvider(plugin, teleportService); } catch (Throwable ignored) {}
         }
         networkCoordinator.reload(configuration);
         RandomTeleportGuiManager guiManager = listenerRegistrar.getGuiManager();

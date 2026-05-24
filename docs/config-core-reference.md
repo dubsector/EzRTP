@@ -45,6 +45,12 @@ This file documents `config.yml` and `force-rtp.yml`.
 - `countdown.particles.secondary-offset`
 - `countdown.chat-messages`
 
+### EzCountdown integration
+
+- `countdown.ezcountdown.enabled`
+- `countdown.ezcountdown.display-types`
+- `countdown.ezcountdown.format`
+
 ### Safety
 
 - `unsafe-blocks`
