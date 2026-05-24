@@ -4,7 +4,7 @@ import com.skyblockexp.ezrtp.EzRtpPlugin;
 import com.skyblockexp.ezrtp.config.EzRtpConfiguration;
 import com.skyblockexp.ezrtp.config.RandomTeleportSettings;
 import com.skyblockexp.ezrtp.config.gui.FactionGuiSettings;
-import com.skyblockexp.ezrtp.integration.ClaimOwnerResolver;
+import com.skyblockexp.ezrtp.integration.TeamsApiClaimFetcher;
 import com.skyblockexp.ezrtp.message.MessageKey;
 import com.skyblockexp.ezrtp.message.MessageProvider;
 import com.skyblockexp.ezrtp.platform.PlatformRuntimeRegistry;
@@ -12,11 +12,6 @@ import com.skyblockexp.ezrtp.storage.RtpUsageStorage;
 import com.skyblockexp.ezrtp.teleport.RandomTeleportService;
 import com.skyblockexp.ezrtp.teleport.TeleportReason;
 import com.skyblockexp.ezrtp.util.MessageUtil;
-import com.skyblockexp.teamsapi.api.TeamsAPI;
-import com.skyblockexp.teamsapi.api.TeamsClaimService;
-import com.skyblockexp.teamsapi.api.TeamsService;
-import com.skyblockexp.teamsapi.model.Team;
-import com.skyblockexp.teamsapi.model.TeamClaim;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.MemoryConfiguration;
@@ -35,8 +30,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,40 +59,24 @@ public final class FactionClaimSelectionGuiManager implements Listener {
     }
 
     public boolean openSelection(Player player) {
-        if (player == null || !TeamsAPI.isAvailable() || !TeamsAPI.isClaimAvailable()) {
+        if (player == null) return true;
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("TeamsAPI")) {
             MessageUtil.send(player, "<red>TeamsAPI is not available on this server.</red>");
             return true;
         }
-
-        TeamsService teamsService = TeamsAPI.getService();
-        TeamsClaimService claimService = TeamsAPI.getClaimService();
-        if (teamsService == null || claimService == null) {
-            MessageUtil.send(player, "<red>TeamsAPI services are not available right now.</red>");
-            return true;
-        }
-
-        Team team = teamsService.getPlayerTeam(player.getUniqueId()).orElse(null);
-        if (team == null) {
-            MessageUtil.send(player, "<red>You are not in a faction/team.</red>");
-            return true;
-        }
-
-        List<TeamClaim> claims = new ArrayList<>(claimService.getTeamClaims(team.getId()));
-        if (claims.isEmpty()) {
-            MessageUtil.send(player, "<red>Your faction/team has no claims.</red>");
-            return true;
-        }
-        claims.sort(Comparator
-                .comparing(TeamClaim::getWorldName)
-                .thenComparingInt(TeamClaim::getChunkX)
-                .thenComparingInt(TeamClaim::getChunkZ));
-
         EzRtpConfiguration configuration = configurationSupplier.get();
         if (configuration == null || !configuration.getFactionGuiSettings().enabled()) {
             MessageUtil.send(player, "<red>Faction RTP GUI is disabled.</red>");
             return true;
         }
-        openPage(player, new Session(claims, team.getDisplayName(), team.getId(), teamsService, 0));
+        try {
+            Optional<TeamsApiClaimFetcher.FetchResult> fetchResult = TeamsApiClaimFetcher.fetch(player);
+            if (fetchResult.isEmpty()) return true;
+            TeamsApiClaimFetcher.FetchResult data = fetchResult.get();
+            openPage(player, new Session(data.claims(), data.teamDisplayName(), data.teamId(), 0));
+        } catch (NoClassDefFoundError ignored) {
+            MessageUtil.send(player, "<red>TeamsAPI is not available on this server.</red>");
+        }
         return true;
     }
 
@@ -129,11 +108,11 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         }
 
         if (slot == session.settings.previousSlot() && session.page > 0) {
-            openPage(player, new Session(session.claims, session.teamDisplayName, session.teamId, session.teamsService, session.page - 1));
+            openPage(player, new Session(session.claims, session.teamDisplayName, session.teamId, session.page - 1));
             return;
         }
         if (slot == session.settings.nextSlot() && (session.page + 1) * session.claimsPerPage() < session.claims.size()) {
-            openPage(player, new Session(session.claims, session.teamDisplayName, session.teamId, session.teamsService, session.page + 1));
+            openPage(player, new Session(session.claims, session.teamDisplayName, session.teamId, session.page + 1));
             return;
         }
         if (slot >= session.claimsPerPage()) {
@@ -145,7 +124,7 @@ public final class FactionClaimSelectionGuiManager implements Listener {
             return;
         }
 
-        TeamClaim claim = session.claims.get(claimIndex);
+        ClaimSnapshot claim = session.claims.get(claimIndex);
         teleportToClaimCenter(player, claim);
     }
 
@@ -188,8 +167,8 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         int start = page * claimsPerPage;
         int end = Math.min(start + claimsPerPage, session.claims.size());
         for (int i = start; i < end; i++) {
-            TeamClaim claim = session.claims.get(i);
-            inventory.setItem(i - start, createClaimItem(claim, i + 1, settings, session.teamsService));
+            ClaimSnapshot claim = session.claims.get(i);
+            inventory.setItem(i - start, createClaimItem(claim, i + 1, settings));
         }
 
         if (page > 0) {
@@ -204,10 +183,10 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         player.openInventory(inventory);
     }
 
-    private void teleportToClaimCenter(Player player, TeamClaim claim) {
-        World claimWorld = plugin.getServer().getWorld(claim.getWorldName());
+    private void teleportToClaimCenter(Player player, ClaimSnapshot claim) {
+        World claimWorld = plugin.getServer().getWorld(claim.worldName());
         if (claimWorld == null) {
-            MessageUtil.send(player, "<red>Claim world '<white>" + claim.getWorldName() + "</white>' is not loaded.</red>");
+            MessageUtil.send(player, "<red>Claim world '<white>" + claim.worldName() + "</white>' is not loaded.</red>");
             return;
         }
 
@@ -219,13 +198,13 @@ public final class FactionClaimSelectionGuiManager implements Listener {
             return;
         }
 
-        RandomTeleportSettings baseSettings = configuration.getSettingsForWorld(claim.getWorldName());
+        RandomTeleportSettings baseSettings = configuration.getSettingsForWorld(claim.worldName());
         if (baseSettings == null) {
-            MessageUtil.send(player, "<red>No RTP settings found for world '<white>" + claim.getWorldName() + "</white>'.</red>");
+            MessageUtil.send(player, "<red>No RTP settings found for world '<white>" + claim.worldName() + "</white>'.</red>");
             return;
         }
 
-        String worldName = claim.getWorldName();
+        String worldName = claim.worldName();
         String group = configuration.resolveGroup(player, worldName);
         boolean bypass = player.isOp();
         if (!bypass) {
@@ -259,8 +238,8 @@ public final class FactionClaimSelectionGuiManager implements Listener {
 
         MemoryConfiguration override = new MemoryConfiguration();
         override.set("world", worldName);
-        override.set("center.x", claim.getChunkX() * 16 + 8);
-        override.set("center.z", claim.getChunkZ() * 16 + 8);
+        override.set("center.x", claim.chunkX() * 16 + 8);
+        override.set("center.z", claim.chunkZ() * 16 + 8);
         RandomTeleportSettings claimCentered = RandomTeleportSettings.fromConfiguration(override, plugin.getLogger(), baseSettings);
 
         player.closeInventory();
@@ -274,8 +253,8 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         });
     }
 
-    private ItemStack createClaimItem(TeamClaim claim, int index, FactionGuiSettings settings, TeamsService teamsService) {
-        ItemStack item = createClaimIcon(claim, settings, teamsService);
+    private ItemStack createClaimItem(ClaimSnapshot claim, int index, FactionGuiSettings settings) {
+        ItemStack item = createClaimIcon(claim, settings);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(replaceClaimPlaceholders(settings.claimNameFormat(), claim, index));
@@ -289,18 +268,18 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         return item;
     }
 
-    private ItemStack createClaimIcon(TeamClaim claim, FactionGuiSettings settings, TeamsService teamsService) {
+    private ItemStack createClaimIcon(ClaimSnapshot claim, FactionGuiSettings settings) {
         if (!settings.skullEnabled()) {
             return new ItemStack(settings.fallbackMaterial());
         }
-        UUID preferredOwner = ClaimOwnerResolver.resolvePreferredOwnerUuid(teamsService, claim).orElse(null);
-        if (preferredOwner == null) {
+        UUID ownerUuid = claim.ownerUuid();
+        if (ownerUuid == null) {
             return new ItemStack(settings.fallbackMaterial());
         }
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = skull.getItemMeta();
         if (meta instanceof SkullMeta skullMeta) {
-            OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(preferredOwner);
+            OfflinePlayer offlinePlayer = plugin.getServer().getOfflinePlayer(ownerUuid);
             skullMeta.setOwningPlayer(offlinePlayer);
             skull.setItemMeta(skullMeta);
             return skull;
@@ -318,14 +297,14 @@ public final class FactionClaimSelectionGuiManager implements Listener {
         return item;
     }
 
-    private String replaceClaimPlaceholders(String text, TeamClaim claim, int index) {
+    private String replaceClaimPlaceholders(String text, ClaimSnapshot claim, int index) {
         return text
                 .replace("<index>", String.valueOf(index))
-                .replace("<world>", claim.getWorldName())
-                .replace("<chunk_x>", String.valueOf(claim.getChunkX()))
-                .replace("<chunk_z>", String.valueOf(claim.getChunkZ()))
-                .replace("<center_x>", String.valueOf(claim.getChunkX() * 16 + 8))
-                .replace("<center_z>", String.valueOf(claim.getChunkZ() * 16 + 8));
+                .replace("<world>", claim.worldName())
+                .replace("<chunk_x>", String.valueOf(claim.chunkX()))
+                .replace("<chunk_z>", String.valueOf(claim.chunkZ()))
+                .replace("<center_x>", String.valueOf(claim.chunkX() * 16 + 8))
+                .replace("<center_z>", String.valueOf(claim.chunkZ() * 16 + 8));
     }
 
     private String format(String titleTemplate, int page, int pages) {
@@ -333,19 +312,17 @@ public final class FactionClaimSelectionGuiManager implements Listener {
     }
 
     private static final class Session {
-        private final List<TeamClaim> claims;
+        private final List<ClaimSnapshot> claims;
         private final String teamDisplayName;
         private final UUID teamId;
-        private final TeamsService teamsService;
         private final int page;
         private FactionGuiSettings settings;
         private Inventory inventory;
 
-        private Session(List<TeamClaim> claims, String teamDisplayName, UUID teamId, TeamsService teamsService, int page) {
+        private Session(List<ClaimSnapshot> claims, String teamDisplayName, UUID teamId, int page) {
             this.claims = claims;
             this.teamDisplayName = teamDisplayName;
             this.teamId = teamId;
-            this.teamsService = teamsService;
             this.page = page;
         }
 
