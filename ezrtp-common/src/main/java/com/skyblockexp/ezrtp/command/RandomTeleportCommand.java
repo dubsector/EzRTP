@@ -7,6 +7,7 @@ import com.skyblockexp.ezrtp.config.EzRtpConfiguration;
 import com.skyblockexp.ezrtp.config.NamedCenter;
 import com.skyblockexp.ezrtp.config.teleport.RtpLimitSettings;
 import com.skyblockexp.ezrtp.config.RandomTeleportSettings;
+import com.skyblockexp.ezrtp.gui.FactionClaimSelectionGuiManager;
 import com.skyblockexp.ezrtp.gui.RandomTeleportGuiManager;
 import com.skyblockexp.ezrtp.protection.ProtectionRegistry;
 import com.skyblockexp.ezrtp.protection.WorldGuardProtectionProvider;
@@ -45,6 +46,7 @@ public final class RandomTeleportCommand implements CommandExecutor, TabComplete
     private final Supplier<EzRtpConfiguration> configurationSupplier;
     private final Supplier<ProtectionRegistry> protectionRegistrySupplier;
     private final RandomTeleportGuiManager guiManager;
+    private final FactionClaimSelectionGuiManager factionClaimGuiManager;
     private final RtpUsageStorage usageStorage;
     private final HeatmapSimulationStore heatmapSimulationStore;
     private final ChunkyProvider chunkyAPI;
@@ -58,6 +60,7 @@ public final class RandomTeleportCommand implements CommandExecutor, TabComplete
                                  Supplier<EzRtpConfiguration> configurationSupplier,
                                  Supplier<ProtectionRegistry> protectionRegistrySupplier,
                                  RandomTeleportGuiManager guiManager,
+                                 FactionClaimSelectionGuiManager factionClaimGuiManager,
                                  RtpUsageStorage usageStorage,
                                  HeatmapSimulationStore heatmapSimulationStore,
                                  ChunkyProvider chunkyAPI,
@@ -67,6 +70,7 @@ public final class RandomTeleportCommand implements CommandExecutor, TabComplete
         this.configurationSupplier = configurationSupplier;
         this.protectionRegistrySupplier = protectionRegistrySupplier;
         this.guiManager = guiManager;
+        this.factionClaimGuiManager = factionClaimGuiManager;
         this.usageStorage = usageStorage;
         this.heatmapSimulationStore = heatmapSimulationStore;
         this.chunkyAPI = chunkyAPI;
@@ -105,6 +109,16 @@ public final class RandomTeleportCommand implements CommandExecutor, TabComplete
                 return subcommand.execute(sender, subArgs);
             }
             if (args.length == 1) {
+                if ("faction".equalsIgnoreCase(args[0])) {
+                    if (!(sender instanceof Player player)) {
+                        MessageUtil.send(sender, "<red>This command may only be used by players.</red>");
+                        return true;
+                    }
+                    if (factionClaimGuiManager != null) {
+                        return factionClaimGuiManager.openSelection(player);
+                    }
+                    return true;
+                }
                 if (handleWorldGuardRegionTeleport(sender, args[0], skipMessage)) {
                     return true;
                 }
@@ -347,6 +361,9 @@ public final class RandomTeleportCommand implements CommandExecutor, TabComplete
             }
             completions.addAll(getWorldGuardRegionCompletions(sender, args[0]));
             completions.addAll(getNamedCenterCompletions(args[0]));
+            if ("faction".startsWith(args[0].toLowerCase(Locale.ROOT))) {
+                completions.add("faction");
+            }
             completions.add("--skip-message");
             return completions;
         } else if (args.length > 1) {

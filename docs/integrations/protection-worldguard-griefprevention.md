@@ -17,6 +17,7 @@ Supported provider names in config:
 - `worldguard` — WorldGuard protected regions
 - `griefprevention` — GriefPrevention claims
 - `teamsapi` — Chunk claims managed by any [TeamsAPI](https://modrinth.com/plugin/teams-api)-compatible team plugin
+  - Also enables faction RTP claim routing with `/rtp faction` and `/f rtp` (TeamsAPI subcommand API).
 
 If a provider plugin is not installed, EzRTP continues with available providers (safe fallback behavior).
 
@@ -62,6 +63,19 @@ EzRTP automatically detects this and avoids claimed chunks during RTP destinatio
   *all* configured providers are unavailable.
 - Claim availability is re-checked dynamically, so a claim plugin that loads after EzRTP
   is picked up without requiring a reload.
+
+## TeamsAPI `/f rtp` subcommand
+
+When TeamsAPI is present, EzRTP registers a `/f rtp` subcommand that opens the
+faction claim RTP GUI directly from the factions menu. This requires the
+`FactionClaimSelectionGuiManager` to be active (see `gui.yml`).
+
+```text
+[EzRTP] TeamsAPI integration: registered '/f rtp' subcommand.
+```
+
+This line is logged once at startup when TeamsAPI is detected. If TeamsAPI is not
+installed, the subcommand is silently skipped and no error is logged.
 
 ## Optional WorldGuard region command mode
 

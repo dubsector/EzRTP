@@ -14,6 +14,7 @@ nav_order: 4
 | `ezrtp.stats` | `op` | View RTP statistics with `/rtp stats` |
 | `ezrtp.heatmap` | `op` | View/save heatmap with `/rtp heatmap` |
 | `ezrtp.heatmap.fake` | `op` | Add fake heatmap points with `/rtp fake` |
+| `ezrtp.heatmap.claims` | `op` (recommended) | View claim border overlays on heatmaps (`claims-overlay`) |
 | `ezrtp.queue.bypass` | `op` | Skip the teleport queue |
 | `ezrtp.forcertp` | `op` | Force-teleport players with `/forcertp` |
 | `ezrtp.setcenter` | `op` | Set or save a named RTP center |

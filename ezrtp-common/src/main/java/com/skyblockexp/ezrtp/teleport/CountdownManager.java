@@ -3,6 +3,7 @@ package com.skyblockexp.ezrtp.teleport;
 import com.skyblockexp.ezrtp.config.effects.CountdownBossBarSettings;
 import com.skyblockexp.ezrtp.config.effects.CountdownParticleSettings;
 import com.skyblockexp.ezrtp.config.RandomTeleportSettings;
+import com.skyblockexp.ezrtp.integration.EzCountdownDisplayBridge;
 import com.skyblockexp.ezrtp.message.MessageKey;
 import com.skyblockexp.ezrtp.message.MessageProvider;
 import com.skyblockexp.ezrtp.pvptag.PvpTagService;
@@ -31,6 +32,7 @@ public final class CountdownManager {
     private final MessageProvider messageProvider;
     private final PvpTagService pvpTagService;
     private final Map<UUID, BossBarCompat.Wrapper> countdownBossBars = new HashMap<>();
+    private EzCountdownDisplayBridge ezCountdownBridge;
 
     public CountdownManager(
             org.bukkit.plugin.java.JavaPlugin plugin,
@@ -50,6 +52,11 @@ public final class CountdownManager {
         this.pvpTagService = pvpTagService;
     }
 
+    /** Sets the optional EzCountdown-backed display bridge. */
+    public void setEzCountdownBridge(EzCountdownDisplayBridge bridge) {
+        this.ezCountdownBridge = bridge;
+    }
+
     /**
      * Starts a countdown for the player before teleportation.
      */
@@ -66,6 +73,15 @@ public final class CountdownManager {
         if (teleportSettings.isCountdownChatMessagesEnabled() && !teleportSettings.isSuppressPlayerMessages()) {
             com.skyblockexp.ezrtp.util.MessageUtil.send(player, messageProvider.format(MessageKey.COUNTDOWN_START,
                 Map.of("seconds", String.valueOf(countdown)), player));
+        }
+
+        // Delegate to EzCountdown when available and configured.
+        if (ezCountdownBridge != null && teleportSettings.getEzCountdownIntegrationSettings().isEnabled()) {
+            boolean started = ezCountdownBridge.startCountdown(
+                    player, countdown, teleportSettings.getEzCountdownIntegrationSettings(),
+                    teleportSettings, pvpTagService, messageProvider, callback, onComplete);
+            if (started) return;
+            // Fall through to built-in countdown if EzCountdown failed to start.
         }
 
         Location startLocation = player.getLocation().clone();
@@ -211,6 +227,9 @@ public final class CountdownManager {
     public void shutdown() {
         countdownBossBars.values().forEach(wrapper -> wrapper.removeAll());
         countdownBossBars.clear();
+        if (ezCountdownBridge != null) {
+            ezCountdownBridge.shutdown();
+        }
     }
 
     private static String legacy(net.kyori.adventure.text.Component component) {

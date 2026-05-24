@@ -20,6 +20,52 @@ Release tags use the `v` prefix (e.g. `v3.0.2`).
 
 ---
 
+## [3.4.0] - 2026-05-24
+
+### Added
+
+- **EzCountdown integration** (optional soft-dependency):
+  - RTP countdown display can now be delegated to [EzCountdown](https://modrinth.com/plugin/ezcountdown) for richer, configurable display channels.
+  - Configurable display types per RTP world: `ACTION_BAR`, `BOSS_BAR`, `TITLE`, `CHAT`, `SCOREBOARD`, `DIALOG`.
+  - Configurable MiniMessage format string with `{formatted}` placeholder for remaining time.
+  - Each teleporting player receives an ephemeral, per-player countdown with permission-scoped visibility.
+  - Falls back to the built-in bossbar/chat countdown automatically when EzCountdown is absent or `ezcountdown.enabled: false`.
+  - New `countdown.ezcountdown.*` config section in `rtp.yml` (disabled by default).
+- `EzCountdown` added as optional soft-dependency in `plugin.yml`.
+- **Factions RTP (TeamsAPI)**:
+  - Added `/rtp faction` to open a claim-selection GUI from all TeamsAPI claims available to the player's team.
+  - Added TeamsAPI subcommand integration for `/f rtp` via the TeamsAPI subcommand API (when provided by the installed TeamsAPI version).
+  - Claim selection now sets the selected claim chunk as RTP center and then applies normal per-world RTP behavior/settings.
+- **New `faction-gui.yml` file** for full claim-GUI configuration.
+- **Heatmap claim overlays** (admin insight):
+  - Added claim border overlay mode for `/rtp heatmap` and `/rtp heatmap save` via `claims-overlay` flag.
+  - Added `rtp.yml` options under `heatmap.claims-overlay.*`:
+    - `enabled`
+    - `style` (`border`)
+    - `color`
+    - `line-width`
+- **Claim-constrained fake RTP simulation**:
+  - Added `/rtp fake <amount> claims [world]` to generate simulated points on faction claims owned by the executor’s team.
+
+### Changed
+
+- **TeamsAPI** dependency bumped from `1.4.1` to `1.8.0`.
+- TeamsAPI `/f rtp` subcommand integration rewritten: replaced the reflection-based `Proxy` approach with a proper `AbstractTeamsSubcommand` subclass (requires TeamsAPI ≥ 1.8.0).
+- TeamsAPI subcommand registration now uses an explicit `isPluginEnabled("TeamsAPI")` guard instead of relying on `NoClassDefFoundError` suppression.
+- Faction claim GUI icons now attempt to use player skulls when claimant/owner identity is available, with configurable fallback material when unavailable.
+- Added configurable title, size, claim item format/lore, skull toggle, and navigation slot/name settings for faction GUI pages.
+- Update checker refactored to use `mc-plugin-update-notifier` with Modrinth as primary source and GitHub Releases as fallback source.
+
+### Fixed
+
+- Heatmap enablement now resolves correctly for inherited/fallback world settings (`heatmap.enabled`) and no longer reads as disabled unexpectedly in world/GUI override paths.
+- `/rtp heatmap` no longer hard-requires biome cache for non-biome heatmaps. Biome cache is only required for biome-filtered heatmap requests.
+- Spigot startup compatibility fixed in update checking (`JavaPlugin#getDescription().getVersion()` used instead of Paper-only metadata calls).
+- Message loading now supports both top-level keys and nested `messages.*` language-file layouts.
+- Language file handling is now non-destructive: startup repair only targets clearly corrupted message files, with automatic backfill of missing message keys while preserving existing translations/customizations.
+
+---
+
 ## [3.3.0] - 2026-05-16
 
 ### Added

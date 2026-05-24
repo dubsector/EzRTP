@@ -16,4 +16,5 @@ set up each one.
 | [Chunky](chunky) | Chunky (world pre-generation) |
 | [Protection](protection-worldguard-griefprevention) | WorldGuard, GriefPrevention, TeamsAPI |
 | [PvP Tag](pvp-tag) | CombatLogX, PvPManager, Simple Combat Log |
+| [EzCountdown](ezcountdown) | EzCountdown (countdown display) |
 | [Network / Proxy](network-proxy) | BungeeCord / Velocity proxy destinations |

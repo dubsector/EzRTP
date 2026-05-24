@@ -57,11 +57,15 @@ public class MessageProvider {
         
         try {
             FileConfiguration config = YamlConfiguration.loadConfiguration(languageFile);
+            org.bukkit.configuration.ConfigurationSection source = config;
+            if (config.isConfigurationSection("messages")) {
+                source = config.getConfigurationSection("messages");
+            }
             Map<String, String> messages = new HashMap<>();
             
             // Load all message keys from the file
             for (MessageKey key : MessageKey.values()) {
-                String message = config.getString(key.getKey());
+                String message = source != null ? source.getString(key.getKey()) : null;
                 if (message != null) {
                     messages.put(key.getKey(), message);
                 } else {
@@ -77,8 +81,8 @@ public class MessageProvider {
             // key but the new key is missing, copy it across so the runtime
             // uses the admin-provided message. We must read the raw config
             // because legacy keys are not part of the MessageKey enum.
-            String legacyForcertp = config.getString("forcertp-target-notify");
-            if (legacyForcertp != null && !config.contains("forcertp-target-notification")) {
+            String legacyForcertp = source != null ? source.getString("forcertp-target-notify") : null;
+            if (legacyForcertp != null && (source == null || !source.contains("forcertp-target-notification"))) {
                 messages.put("forcertp-target-notification", legacyForcertp);
                 logger.info("Migrated legacy message key 'forcertp-target-notify' to 'forcertp-target-notification'");
             }

@@ -2,6 +2,7 @@ package com.skyblockexp.ezrtp.config;
 
 import com.skyblockexp.ezrtp.config.gui.GuiSettings;
 import com.skyblockexp.ezrtp.config.gui.GuiWorldOption;
+import com.skyblockexp.ezrtp.config.gui.FactionGuiSettings;
 import com.skyblockexp.ezrtp.config.network.NetworkConfiguration;
 import com.skyblockexp.ezrtp.config.network.TeleportQueueSettings;
 import org.bukkit.configuration.ConfigurationSection;
@@ -36,6 +37,7 @@ public final class EzRtpConfiguration {
 
     private final RandomTeleportSettings defaultSettings;
     private final GuiSettings guiSettings;
+    private final FactionGuiSettings factionGuiSettings;
     private final TeleportQueueSettings queueSettings;
     private final NetworkConfiguration networkConfiguration;
     private final boolean allowGuiDuringCooldown;
@@ -46,6 +48,7 @@ public final class EzRtpConfiguration {
 
     private EzRtpConfiguration(RandomTeleportSettings defaultSettings, GuiSettings guiSettings,
                                TeleportQueueSettings queueSettings, NetworkConfiguration networkConfiguration,
+                               FactionGuiSettings factionGuiSettings,
                                boolean allowGuiDuringCooldown, boolean humanReadableCooldown,
                                Map<String, NamedCenter> namedCenters,
                                boolean suppressPlayerMessages, boolean suppressConsoleMessages) {
@@ -53,6 +56,7 @@ public final class EzRtpConfiguration {
         this.guiSettings = guiSettings;
         this.queueSettings = queueSettings;
         this.networkConfiguration = networkConfiguration;
+        this.factionGuiSettings = factionGuiSettings;
         this.allowGuiDuringCooldown = allowGuiDuringCooldown;
         this.humanReadableCooldown = humanReadableCooldown;
         this.namedCenters = namedCenters;
@@ -217,6 +221,10 @@ public final class EzRtpConfiguration {
         return networkConfiguration;
     }
 
+    public FactionGuiSettings getFactionGuiSettings() {
+        return factionGuiSettings;
+    }
+
     /**
      * Checks if GUI can be opened during cooldown period.
      * @return true if GUI should be allowed during cooldown
@@ -252,6 +260,7 @@ public final class EzRtpConfiguration {
         return fromConfigurations(configuration,
                 configuration.getConfigurationSection("messages"),
                 configuration.getConfigurationSection("gui"),
+                configuration.getConfigurationSection("faction-gui"),
                 configuration.getConfigurationSection("queue"),
                 configuration.getConfigurationSection("network"),
                 logger);
@@ -260,6 +269,7 @@ public final class EzRtpConfiguration {
     public static EzRtpConfiguration fromConfigurations(ConfigurationSection baseConfiguration,
                                                         ConfigurationSection messagesConfiguration,
                                                         ConfigurationSection guiConfiguration,
+                                                        ConfigurationSection factionGuiConfiguration,
                                                         ConfigurationSection queueConfiguration,
                                                         ConfigurationSection networkConfiguration,
                                                         Logger logger) {
@@ -275,6 +285,7 @@ public final class EzRtpConfiguration {
         NetworkConfiguration networkConfig = NetworkConfiguration.fromConfiguration(networkConfiguration, logger);
         GuiSettings guiSettings = GuiSettings.fromConfiguration(guiConfiguration, defaultSettings, networkConfig, 
                 defaultSettings.getRareBiomeOptimizationSettings(), logger);
+        FactionGuiSettings factionGuiSettings = FactionGuiSettings.fromConfiguration(factionGuiConfiguration);
         TeleportQueueSettings queueSettings = TeleportQueueSettings.fromConfiguration(queueConfiguration);
         
         // Parse additional configuration options
@@ -284,8 +295,18 @@ public final class EzRtpConfiguration {
         boolean suppressPlayerMessages = baseConfiguration != null && baseConfiguration.getBoolean("messages.suppress-player", false);
         boolean suppressConsoleMessages = baseConfiguration != null && baseConfiguration.getBoolean("messages.suppress-console", false);
         
-        return new EzRtpConfiguration(defaultSettings, guiSettings, queueSettings, networkConfig,
+        return new EzRtpConfiguration(defaultSettings, guiSettings, queueSettings, networkConfig, factionGuiSettings,
                 allowGuiDuringCooldown, humanReadableCooldown, namedCenters, suppressPlayerMessages, suppressConsoleMessages);
+    }
+
+    public static EzRtpConfiguration fromConfigurations(ConfigurationSection baseConfiguration,
+                                                        ConfigurationSection messagesConfiguration,
+                                                        ConfigurationSection guiConfiguration,
+                                                        ConfigurationSection queueConfiguration,
+                                                        ConfigurationSection networkConfiguration,
+                                                        Logger logger) {
+        return fromConfigurations(baseConfiguration, messagesConfiguration, guiConfiguration, null,
+                queueConfiguration, networkConfiguration, logger);
     }
 
     private static void copySection(ConfigurationSection source, ConfigurationSection target) {
@@ -311,7 +332,8 @@ public final class EzRtpConfiguration {
                                GuiSettings guiSettings,
                                TeleportQueueSettings queueSettings,
                                NetworkConfiguration networkConfiguration) {
-        this(defaultSettings, guiSettings, queueSettings, networkConfiguration, true, true,
+        this(defaultSettings, guiSettings, queueSettings, networkConfiguration,
+                FactionGuiSettings.fromConfiguration(null), true, true,
                 Collections.emptyMap(), false, false);
     }
 

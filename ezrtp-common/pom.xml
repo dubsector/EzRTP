@@ -5,13 +5,13 @@
   <parent>
     <groupId>com.skyblockexp</groupId>
     <artifactId>ezrtp-parent</artifactId>
-    <version>3.3.0</version>
+    <version>3.4.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <groupId>com.skyblockexp</groupId>
   <artifactId>ezrtp-common</artifactId>
-  <version>3.3.0</version>
+  <version>3.4.0</version>
   <packaging>jar</packaging>
   <name>EzRTP Common</name>
   <description>Shared utilities for EzRTP (platform-independent)</description>
@@ -76,8 +76,20 @@
     <dependency>
       <groupId>com.github.ez-plugins</groupId>
       <artifactId>teams-api</artifactId>
-      <version>1.4.1</version>
+      <version>1.8.0</version>
       <scope>provided</scope>
+    </dependency>
+    <!-- EzCountdown integration — optional soft-dependency; classes only loaded when plugin is present -->
+    <dependency>
+      <groupId>com.github.ez-plugins</groupId>
+      <artifactId>EzCountdown</artifactId>
+      <version>v1.4.2</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ez-plugins</groupId>
+      <artifactId>mc-plugin-update-notifier</artifactId>
+      <version>1.0.0</version>
     </dependency>
     <!-- HikariCP connection pool — used by MySqlHotspotStorage for the persistent
              hotspot write path. The basic DriverManager pattern in MySqlRtpUsageStorage is

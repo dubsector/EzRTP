@@ -14,6 +14,7 @@
 [*]Heatmap generation and PNG export
 [*]Named centers and WorldGuard region command routing
 [*]Optional Chunky pre-generation support
+[*]TeamsAPI faction-claim RTP selection via [icode]/rtp faction[/icode] and [icode]/f rtp[/icode]
 [*]Optional performance and unsafe-location monitoring exports
 [*]Folia-compatible runtime behavior for modern scheduler environments
 [/LIST]
@@ -35,6 +36,7 @@
 [table]
 [tr][th]Command[/th][th]Description[/th][th]Permission[/th][/tr]
 [tr][td][icode]/rtp[/icode][/td][td]Default RTP flow (GUI or direct teleport depending on setup)[/td][td][icode]ezrtp.use[/icode][/td][/tr]
+[tr][td][icode]/rtp faction[/icode][/td][td]Open claim GUI and RTP around selected faction claim center[/td][td][icode]ezrtp.use[/icode][/td][/tr]
 [tr][td][icode]/forcertp <player> [world][/icode][/td][td]Force RTP for a target player[/td][td][icode]ezrtp.forcertp[/icode][/td][/tr]
 [/table]
 
