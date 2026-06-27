@@ -74,7 +74,8 @@ public final class RareBiomeRegistry {
             "FLOWER_FOREST",
             "MODIFIED_JUNGLE",
             "MODIFIED_JUNGLE_EDGE",
-            "DEEP_DARK"
+            "DEEP_DARK",
+            "SULFUR_CAVES"
         }) {
             Biome b = BiomeCompat.safeValueOf(name);
             if (b != null) rare.add(b);
