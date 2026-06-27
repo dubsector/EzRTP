@@ -17,7 +17,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public Biome get(NamespacedKey key) {
             String raw = key.getKey(); // e.g. "minecraft:sulfur_caves"
             String name = raw.contains(":") ? raw.substring(raw.indexOf(':') + 1) : raw;
-            return Biome.valueOf(name.toUpperCase(Locale.ROOT));
+            try {
+                return Biome.valueOf(name.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return null; // biome not present in this server version
+            }
         }
         @Override
         public Iterator<Biome> iterator() {
