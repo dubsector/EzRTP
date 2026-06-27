@@ -147,64 +147,35 @@ jobs:
         id: paper
         run: |
           set -euo pipefail
-          # Try stable API first (api.papermc.io/v2), fall back to experimental (fill.papermc.io/v3)
-          STABLE_VERSIONS=$(curl -fsSL https://api.papermc.io/v2/projects/paper | \
-            python3 -c "import sys,json; print('\n'.join(json.load(sys.stdin)['versions']))")
-          if echo "$STABLE_VERSIONS" | grep -qx "26.2"; then
-            echo "Found Paper 26.2 on stable API"
-            BUILD=$(curl -fsSL "https://api.papermc.io/v2/projects/paper/versions/26.2/builds" | \
-              python3 -c "
-          import sys, json
-          builds = json.load(sys.stdin)['builds']
-          stable = [b for b in builds if b.get('channel') == 'default']
-          print((stable or builds)[-1]['build'])
-            ")
-            JAR_NAME=$(curl -fsSL "https://api.papermc.io/v2/projects/paper/versions/26.2/builds/${BUILD}" | \
-              python3 -c "import sys,json; print(json.load(sys.stdin)['downloads']['application']['name'])")
-            DOWNLOAD_URL="https://api.papermc.io/v2/projects/paper/versions/26.2/builds/${BUILD}/downloads/${JAR_NAME}"
-          else
-            echo "Paper 26.2 not on stable API - checking experimental (fill.papermc.io/v3)"
-            FILL_RESP=$(curl -fsSL "https://fill.papermc.io/v3/projects/paper/versions/26.2/builds" 2>/dev/null || echo "[]")
-            BUILD_COUNT=$(echo "$FILL_RESP" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "0")
-            if [ "$BUILD_COUNT" = "0" ]; then
-              echo "::warning::Paper 26.2 has no builds on stable or experimental API - smoke test skipped"
-              echo "available=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            echo "Found ${BUILD_COUNT} experimental Paper 26.2 build(s)"
-            BUILD=$(echo "$FILL_RESP" | python3 -c "
-          import sys, json
-          builds = json.load(sys.stdin)
-          stable = [b for b in builds if b.get('channel','').lower() == 'default']
-          chosen = sorted((stable or builds), key=lambda b: b['id'])[-1]
-          print(chosen['id'])
-            ")
-            JAR_NAME=$(echo "$FILL_RESP" | python3 -c "
-          import sys, json
-          builds = json.load(sys.stdin)
-          stable = [b for b in builds if b.get('channel','').lower() == 'default']
-          chosen = sorted((stable or builds), key=lambda b: b['id'])[-1]
-          print(chosen['downloads']['server:default']['name'])
-            ")
-            DOWNLOAD_URL=$(echo "$FILL_RESP" | python3 -c "
-          import sys, json
-          builds = json.load(sys.stdin)
-          stable = [b for b in builds if b.get('channel','').lower() == 'default']
-          chosen = sorted((stable or builds), key=lambda b: b['id'])[-1]
-          print(chosen['downloads']['server:default']['url'])
-            ")
+          UA="EzRTP-CI/1.0 (https://github.com/dubsector/EzRTP)"
+          BUILDS=$(curl -fsSL -H "User-Agent: ${UA}" \
+            "https://fill.papermc.io/v3/projects/paper/versions/26.2/builds" 2>/dev/null || echo "[]")
+          BUILD_COUNT=$(echo "$BUILDS" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "0")
+          if [ "$BUILD_COUNT" = "0" ]; then
+            echo "::warning::No Paper 26.2 builds available yet - smoke test skipped"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          echo "build=${BUILD}"               >> "$GITHUB_OUTPUT"
-          echo "jar_name=${JAR_NAME}"         >> "$GITHUB_OUTPUT"
-          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
-          echo "available=true"               >> "$GITHUB_OUTPUT"
-          echo "Resolved: Paper 26.2 build ${BUILD} (${JAR_NAME})"
+          echo "Found ${BUILD_COUNT} Paper 26.2 build(s)"
+          echo "$BUILDS" | python3 -c "
+          import sys, json
+          builds = json.load(sys.stdin)
+          stable = [b for b in builds if b.get('channel','').upper() == 'STABLE']
+          chosen = sorted((stable or builds), key=lambda b: b['id'])[-1]
+          d = chosen['downloads']['server:default']
+          sys.stdout.write('build=' + str(chosen['id']) + chr(10))
+          sys.stdout.write('jar_name=' + d['name'] + chr(10))
+          sys.stdout.write('download_url=' + d['url'] + chr(10))
+          " >> "$GITHUB_OUTPUT"
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "Resolved: Paper 26.2 build $(grep ^build= $GITHUB_OUTPUT | tail -1 | cut -d= -f2)"
 
       - name: Download Paper 26.2 server JAR
         if: steps.paper.outputs.available == 'true'
         run: |
           mkdir -p smoke-server/plugins
           curl -fsSL \
+            -H "User-Agent: EzRTP-CI/1.0 (https://github.com/dubsector/EzRTP)" \
             "${{ steps.paper.outputs.download_url }}" \
             -o smoke-server/paper.jar
 
@@ -288,22 +259,38 @@ jobs:
       - name: Resolve latest Folia build
         id: folia
         run: |
-          MC_VERSION=$(curl -fsSL https://api.papermc.io/v2/projects/folia | \
-            python3 -c "import sys,json; vs=json.load(sys.stdin)['versions']; print(vs[-1])")
-          BUILD=$(curl -fsSL "https://api.papermc.io/v2/projects/folia/versions/${MC_VERSION}/builds" | \
-            python3 -c "import sys,json; builds=json.load(sys.stdin)['builds']; print(builds[-1]['build'])")
-          JAR_NAME=$(curl -fsSL "https://api.papermc.io/v2/projects/folia/versions/${MC_VERSION}/builds/${BUILD}" | \
-            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['downloads']['application']['name'])")
+          UA="EzRTP-CI/1.0 (https://github.com/dubsector/EzRTP)"
+          MC_VERSION=$(curl -fsSL -H "User-Agent: ${UA}" \
+            "https://fill.papermc.io/v3/projects/folia" | python3 -c "
+          import sys, json
+          versions_map = json.load(sys.stdin)['versions']
+          all_versions = [v for vs in versions_map.values() for v in vs]
+          def vkey(v):
+              try: return tuple(int(x) for x in v.split('.'))
+              except: return (0,)
+          print(sorted(all_versions, key=vkey)[-1])
+          ")
+          BUILDS=$(curl -fsSL -H "User-Agent: ${UA}" \
+            "https://fill.papermc.io/v3/projects/folia/versions/${MC_VERSION}/builds")
+          echo "$BUILDS" | python3 -c "
+          import sys, json
+          builds = json.load(sys.stdin)
+          stable = [b for b in builds if b.get('channel','').upper() == 'STABLE']
+          chosen = sorted((stable or builds), key=lambda b: b['id'])[-1]
+          d = chosen['downloads']['server:default']
+          sys.stdout.write('build=' + str(chosen['id']) + chr(10))
+          sys.stdout.write('jar_name=' + d['name'] + chr(10))
+          sys.stdout.write('download_url=' + d['url'] + chr(10))
+          " >> "$GITHUB_OUTPUT"
           echo "mc_version=${MC_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "build=${BUILD}"           >> "$GITHUB_OUTPUT"
-          echo "jar_name=${JAR_NAME}"     >> "$GITHUB_OUTPUT"
-          echo "Resolved: Folia ${MC_VERSION} build ${BUILD} (${JAR_NAME})"
+          echo "Resolved: Folia ${MC_VERSION} build $(grep ^build= $GITHUB_OUTPUT | tail -1 | cut -d= -f2)"
 
       - name: Download Folia server JAR
         run: |
           mkdir -p smoke-server/plugins
           curl -fsSL \
-            "https://api.papermc.io/v2/projects/folia/versions/${{ steps.folia.outputs.mc_version }}/builds/${{ steps.folia.outputs.build }}/downloads/${{ steps.folia.outputs.jar_name }}" \
+            -H "User-Agent: EzRTP-CI/1.0 (https://github.com/dubsector/EzRTP)" \
+            "${{ steps.folia.outputs.download_url }}" \
             -o smoke-server/folia.jar
 
       - name: Copy plugin JARs
@@ -418,11 +405,15 @@ jobs:
           PLUGIN_VERSION: ${{ steps.meta.outputs.version }}
         run: |
           TAG="dubsector-26.2-build.${RUN_NUMBER}"
+          cp "ezrtp-bukkit/target/EzRTP-${PLUGIN_VERSION}.jar"        "EzRTP-${PLUGIN_VERSION}-beta-26.2.jar"
+          cp "ezrtp-paper/target/ezrtp-paper-${PLUGIN_VERSION}.jar"   "ezrtp-paper-${PLUGIN_VERSION}-beta-26.2.jar"
+          cp "ezrtp-spigot/target/ezrtp-spigot-${PLUGIN_VERSION}.jar" "ezrtp-spigot-${PLUGIN_VERSION}-beta-26.2.jar"
+          cp "ezrtp-purpur/target/ezrtp-purpur-${PLUGIN_VERSION}.jar" "ezrtp-purpur-${PLUGIN_VERSION}-beta-26.2.jar"
           gh release create "$TAG" \
-            "ezrtp-bukkit/target/EzRTP-${PLUGIN_VERSION}.jar" \
-            "ezrtp-paper/target/ezrtp-paper-${PLUGIN_VERSION}.jar" \
-            "ezrtp-spigot/target/ezrtp-spigot-${PLUGIN_VERSION}.jar" \
-            "ezrtp-purpur/target/ezrtp-purpur-${PLUGIN_VERSION}.jar" \
+            "EzRTP-${PLUGIN_VERSION}-beta-26.2.jar" \
+            "ezrtp-paper-${PLUGIN_VERSION}-beta-26.2.jar" \
+            "ezrtp-spigot-${PLUGIN_VERSION}-beta-26.2.jar" \
+            "ezrtp-purpur-${PLUGIN_VERSION}-beta-26.2.jar" \
             --title "EzRTP ${PLUGIN_VERSION} for MC 26.2 (build ${RUN_NUMBER})" \
             --notes-file release-notes.md \
             --repo "$GITHUB_REPOSITORY"
