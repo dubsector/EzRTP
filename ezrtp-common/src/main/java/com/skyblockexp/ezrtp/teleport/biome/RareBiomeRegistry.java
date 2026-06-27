@@ -299,12 +299,8 @@ public final class RareBiomeRegistry {
         this.storage = hotspotStorage;
         List<HotspotStorage.HotspotRecord> records = hotspotStorage.loadAll();
         for (HotspotStorage.HotspotRecord rec : records) {
-            Biome biome;
-            try {
-                biome = Biome.valueOf(rec.biome());
-            } catch (IllegalArgumentException e) {
-                continue; // biome no longer exists in this server version
-            }
+            Biome biome = BiomeCompat.safeValueOf(rec.biome());
+            if (biome == null) continue;
             if (!isRareBiome(biome)) {
                 continue;
             }
