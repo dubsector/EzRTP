@@ -141,8 +141,7 @@ jobs:
           cache: maven
 
       - name: Build plugin JARs
-        run: |
-          mvn -B -ntp -pl ezrtp-bukkit,ezrtp-paper -am -DskipTests -Dspotless.check.skip=true package
+        run: mvn -B -ntp -pl ezrtp-bukkit,ezrtp-paper -am -DskipTests -Dspotless.check.skip=true package
 
       - name: Resolve Paper 26.2 build
         id: paper
@@ -252,8 +251,7 @@ jobs:
           cache: maven
 
       - name: Build plugin JARs
-        run: |
-          mvn -B -ntp -pl ezrtp-bukkit,ezrtp-paper -am -DskipTests -Dspotless.check.skip=true package
+        run: mvn -B -ntp -pl ezrtp-bukkit,ezrtp-paper -am -DskipTests -Dspotless.check.skip=true package
 
       - name: Resolve latest Folia build
         id: folia
@@ -359,6 +357,28 @@ jobs:
           VERSION=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | tail -1)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Write release notes
+        env:
+          PLUGIN_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          printf '%s\n' \
+            "## EzRTP ${PLUGIN_VERSION} - Minecraft 26.2 personal build" \
+            "" \
+            "**Supported platforms:** Paper 26.2, Folia (latest), Spigot 26.2, Purpur 26.2, Bukkit 26.2" \
+            "" \
+            "**JARs included:**" \
+            "- EzRTP-${PLUGIN_VERSION}.jar -- main plugin (all platforms)" \
+            "- ezrtp-paper-${PLUGIN_VERSION}.jar -- Paper/Folia module" \
+            "- ezrtp-spigot-${PLUGIN_VERSION}.jar -- Spigot module" \
+            "- ezrtp-purpur-${PLUGIN_VERSION}.jar -- Purpur module" \
+            "" \
+            "**Changes in this build:**" \
+            "- Added SULFUR_CAVES biome support (new in Minecraft 26.2)" \
+            "- Updated Adventure API to 5.2.0 (required by Paper 26.2)" \
+            "" \
+            "Personal build by dubsector - not an official release." \
+            > release-notes.md
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -366,34 +386,11 @@ jobs:
           PLUGIN_VERSION: ${{ steps.meta.outputs.version }}
         run: |
           TAG="dubsector-26.2-build.${RUN_NUMBER}"
-          NOTES="## EzRTP ${PLUGIN_VERSION} — Minecraft 26.2 personal build
-
-**Supported platforms**
-| Platform | MC Version |
-|---|---|
-| Paper | 26.2 |
-| Folia | latest |
-| Spigot | 26.2 |
-| Purpur | 26.2 |
-| Bukkit | 26.2 |
-
-**JARs**
-- \`EzRTP-${PLUGIN_VERSION}.jar\` — main plugin (drop into plugins/)
-- \`ezrtp-paper-${PLUGIN_VERSION}.jar\` — Paper module (drop alongside main jar on Paper/Folia servers)
-- \`ezrtp-spigot-${PLUGIN_VERSION}.jar\` — Spigot module
-- \`ezrtp-purpur-${PLUGIN_VERSION}.jar\` — Purpur module
-
-**Changes in this build**
-- Added \`SULFUR_CAVES\` biome support (new in Minecraft 26.2)
-- Updated Adventure API to 5.2.0 (required by Paper 26.2)
-
-> Personal build by dubsector — not an official release."
-
           gh release create "$TAG" \
             "ezrtp-bukkit/target/EzRTP-${PLUGIN_VERSION}.jar" \
             "ezrtp-paper/target/ezrtp-paper-${PLUGIN_VERSION}.jar" \
             "ezrtp-spigot/target/ezrtp-spigot-${PLUGIN_VERSION}.jar" \
             "ezrtp-purpur/target/ezrtp-purpur-${PLUGIN_VERSION}.jar" \
             --title "EzRTP ${PLUGIN_VERSION} for MC 26.2 (build ${RUN_NUMBER})" \
-            --notes "$NOTES" \
+            --notes-file release-notes.md \
             --repo "$GITHUB_REPOSITORY"
