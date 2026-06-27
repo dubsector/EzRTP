@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
 
-/** Minimal Registry stub for tests — must be an interface to match Paper API. */
-public interface Registry<T> extends Iterable<T> {
-    Registry<Object> STRUCTURE_TYPE = new Registry<Object>() {
-        @Override public Object get(NamespacedKey key) { return null; }
-        @Override public Iterator<Object> iterator() { return java.util.Collections.emptyIterator(); }
+/** Minimal Registry stub for tests — interface with T extends Keyed to match Paper API erasure. */
+public interface Registry<T extends Keyed> extends Iterable<T> {
+    Registry<Keyed> STRUCTURE_TYPE = new Registry<Keyed>() {
+        @Override public Keyed get(NamespacedKey key) { return null; }
+        @Override public Iterator<Keyed> iterator() { return java.util.Collections.emptyIterator(); }
     };
 
     Registry<Biome> BIOME = new Registry<Biome>() {
