@@ -5,16 +5,18 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
 
-/** Minimal Registry stub for tests. */
-public class Registry<T> implements Iterable<T> {
-    public static Registry<Object> STRUCTURE_TYPE = new Registry<>();
+/** Minimal Registry stub for tests — must be an interface to match Paper API. */
+public interface Registry<T> extends Iterable<T> {
+    Registry<Object> STRUCTURE_TYPE = new Registry<Object>() {
+        @Override public Object get(NamespacedKey key) { return null; }
+        @Override public Iterator<Object> iterator() { return java.util.Collections.emptyIterator(); }
+    };
 
-    public static final Registry<Biome> BIOME = new Registry<Biome>() {
+    Registry<Biome> BIOME = new Registry<Biome>() {
         @Override
         public Biome get(NamespacedKey key) {
             String raw = key.getKey(); // e.g. "minecraft:sulfur_caves"
             String name = raw.contains(":") ? raw.substring(raw.indexOf(':') + 1) : raw;
-            // Biome.valueOf in the test shim returns null on miss (no throw)
             return Biome.valueOf(name.toUpperCase(Locale.ROOT));
         }
         @Override
@@ -23,14 +25,5 @@ public class Registry<T> implements Iterable<T> {
         }
     };
 
-    public Registry() {}
-
-    public T get(NamespacedKey key) {
-        return null;
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return java.util.Collections.emptyIterator();
-    }
+    T get(NamespacedKey key);
 }
