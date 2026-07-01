@@ -115,23 +115,22 @@ jobs:
       - name: Resolve latest Folia build
         id: folia
         run: |
-          MC_VERSION=$(curl -fsSL https://api.papermc.io/v2/projects/folia | \
-            python3 -c "import sys,json; vs=json.load(sys.stdin)['versions']; print(vs[-1])")
-          BUILD=$(curl -fsSL "https://api.papermc.io/v2/projects/folia/versions/${MC_VERSION}/builds" | \
-            python3 -c "import sys,json; builds=json.load(sys.stdin)['builds']; print(builds[-1]['build'])")
-          JAR_NAME=$(curl -fsSL "https://api.papermc.io/v2/projects/folia/versions/${MC_VERSION}/builds/${BUILD}" | \
-            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['downloads']['application']['name'])")
+          MC_VERSION=$(curl -fsSL https://fill.papermc.io/v3/projects/folia | \
+            python3 -c "import sys,json; vs=json.load(sys.stdin)['versions']; k=next(iter(vs)); print(vs[k][0])")
+          BUILD_INFO=$(curl -fsSL "https://fill.papermc.io/v3/projects/folia/versions/${MC_VERSION}/builds")
+          BUILD=$(echo "$BUILD_INFO" | python3 -c "import sys,json; builds=json.load(sys.stdin); stable=[b for b in builds if b.get('channel','')=='STABLE']; print((stable or builds)[0]['id'])")
+          JAR_NAME=$(echo "$BUILD_INFO" | python3 -c "import sys,json; builds=json.load(sys.stdin); stable=[b for b in builds if b.get('channel','')=='STABLE']; print((stable or builds)[0]['downloads']['server:default']['name'])")
+          JAR_URL=$(echo "$BUILD_INFO" | python3 -c "import sys,json; builds=json.load(sys.stdin); stable=[b for b in builds if b.get('channel','')=='STABLE']; print((stable or builds)[0]['downloads']['server:default']['url'])")
           echo "mc_version=${MC_VERSION}" >> "$GITHUB_OUTPUT"
           echo "build=${BUILD}"           >> "$GITHUB_OUTPUT"
           echo "jar_name=${JAR_NAME}"     >> "$GITHUB_OUTPUT"
+          echo "jar_url=${JAR_URL}"       >> "$GITHUB_OUTPUT"
           echo "Resolved: Folia ${MC_VERSION} build ${BUILD} (${JAR_NAME})"
 
       - name: Download Folia server JAR
         run: |
           mkdir -p smoke-server/plugins
-          curl -fsSL \
-            "https://api.papermc.io/v2/projects/folia/versions/${{ steps.folia.outputs.mc_version }}/builds/${{ steps.folia.outputs.build }}/downloads/${{ steps.folia.outputs.jar_name }}" \
-            -o smoke-server/folia.jar
+          curl -fsSL "${{ steps.folia.outputs.jar_url }}" -o smoke-server/folia.jar
 
       - name: Copy plugin JARs
         run: |
